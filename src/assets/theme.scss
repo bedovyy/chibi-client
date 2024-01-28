@@ -1,0 +1,73 @@
+:root.novellus {
+  --color-background: #13152c;
+  --color-background-soft: #191b31;
+  --color-background-mute: #22253f;
+
+  --color-border: #22253f;
+  --color-border-hover: #22253f;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: white;
+  --color-text-secondary: #f5f3c2;
+
+  --color-button: #f5f3c2;
+  --color-button-hover: #f5f3c2;
+  --color-button-text: #191b31;
+  --color-label: #f5f3c2;
+  --color-disabled: grey;
+}
+:root.dark-radio {
+  --color-background: #13152c;
+  --color-background-soft: #191b31;
+  --color-background-mute: #22253f;
+
+  --color-border: #22253f;
+  --color-border-hover: #22253f;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+
+  --color-button: linear-gradient(to bottom right, #f97316, #ea580c);
+  --color-button-hover: #f97316;
+  --color-button-text: white;
+  --color-label: #e5e7eb;
+  --color-disabled: grey;
+}
+:root.white-radio {
+  --color-background: white;
+  --color-background-soft: #f9fafb;
+  --color-background-mute: #e5e7eb;
+
+  --color-border: #e5e7eb;
+  --color-border-hover: #93c5fd;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: #1f2937;
+  --color-text-secondary: #9ca3af;
+
+  --color-button: linear-gradient(to bottom right, #ffedd5, #fdba74);
+  --color-button-hover: linear-gradient(to bottom right, #ffedd5, #fed7aa);
+  --color-button-text: #ea580c;
+  --color-label: #9ca3af;
+  --color-disabled: grey;
+}
+
+label {
+  color: var(--color-label)
+}
+
+button {
+  background: var(--color-button);
+	color: var(--color-button-text);
+
+  &:hover {
+    background: var(--color-button-hover);
+    cursor: pointer;
+  }
+  &:disabled {
+    background: var(--color-disabled);
+    cursor:not-allowed;
+    transition: background 0.5s;
+  }
+}
