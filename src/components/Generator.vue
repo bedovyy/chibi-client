@@ -33,8 +33,12 @@ async function generate() {
     "batch_size": 1,
   }
 
-  console.log(params);
-  const res = await axios.post("http://172.17.2.11:8080/sdapi/v1/txt2img", params);
+  const url = localStorage.getItem("webui_url");
+  if (!url) {
+    isGenerating.value = false;
+    return;
+  }
+  const res = await axios.post(`${url}/sdapi/v1/txt2img`, params);
   if (res.status == 200) {
     const base64image = `data:image/${getBase64FileExtension(res.data['images'][0])};base64,${res.data['images'][0]}`;
     fetch(base64image).then(res => res.blob()).then(res => emit("generated", window.URL.createObjectURL(res)));
@@ -127,10 +131,7 @@ button {
   font-size: 18px;
   font-weight: bold;
 
-  border: none;
   border-radius: 10px 10px 0 0;
-	padding: 5px 10px;
-
 }
 
 // cherry-picked
@@ -138,12 +139,6 @@ button {
 input, textarea {
   width: 100%;
 	text-align: left;
-
-	background-color: var(--color-background);
-	color: var(--color-text);
-	border: 2px solid var(--color-border);
-
-	padding: 5px 10px;
 }
 input[type="range"] {
 	-webkit-appearance: none;
@@ -160,16 +155,16 @@ input[type="range"]::-webkit-slider-thumb {
 	width: 11px;
 	height: 18px;
 
-	background-color: var(--color-border);
+	background-color: var(--color-text-secondary);
 	border: none;
 
-	outline: 2px solid var(--color-border);
+	outline: 2px solid var(--color-text-secondary);
 	border-radius: 2px;
 }
 input[type="range"]:focus::-webkit-slider-thumb,
 input[type="range"]:hover::-webkit-slider-thumb {
-	background-color: var(--color-border-hover);
-	outline: 2px solid var(--color-border-hover);
+	background-color: var(--color-text);
+	outline: 2px solid var(--color-text);
 }
 
 

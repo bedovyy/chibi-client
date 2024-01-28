@@ -14,7 +14,7 @@
   --color-button-hover: #f5f3c2;
   --color-button-text: #191b31;
   --color-label: #f5f3c2;
-  --color-disabled: grey;
+  --color-disabled: WhiteSmoke;
 }
 :root.dark-radio {
   --color-background: #13152c;
@@ -32,7 +32,7 @@
   --color-button-hover: #f97316;
   --color-button-text: white;
   --color-label: #e5e7eb;
-  --color-disabled: grey;
+  --color-disabled: WhiteSmoke;
 }
 :root.white-radio {
   --color-background: white;
@@ -50,7 +50,7 @@
   --color-button-hover: linear-gradient(to bottom right, #ffedd5, #fed7aa);
   --color-button-text: #ea580c;
   --color-label: #9ca3af;
-  --color-disabled: grey;
+  --color-disabled: WhiteSmoke;
 }
 
 label {
@@ -60,6 +60,9 @@ label {
 button {
   background: var(--color-button);
 	color: var(--color-button-text);
+  border: none;
+	padding: 5px 10px;
+  border-radius: 5px;
 
   &:hover {
     background: var(--color-button-hover);
@@ -67,7 +70,23 @@ button {
   }
   &:disabled {
     background: var(--color-disabled);
+    color: var(--color-background-mute);
     cursor:not-allowed;
+    transition: background 0.5s;
+  }
+}
+
+input, textarea {
+  background-color: var(--color-background);
+	color: var(--color-text);
+	border: 2px solid var(--color-border);
+  box-sizing: border-box;
+
+	padding: 5px 10px;
+
+  &:disabled {
+    background: var(--color-background-mute);
+    color: var(--color-disabled);
     transition: background 0.5s;
   }
 }
