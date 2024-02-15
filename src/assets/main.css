@@ -3,10 +3,11 @@
 
 #app {
   width: 100vw;
-  height: 100vh;
+  height: 100svh;
   margin: 0;
   padding: 0;
   font-weight: normal;
+  user-select: none;
 }
 
 a,
@@ -25,4 +26,87 @@ strong {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
   }
+}
+
+/* I did */
+:root {
+  --color-tag-1: red;
+  --color-tag0: lightblue;
+  --color-tag1: indianred;
+  --color-tag2: red;
+  --color-tag3: violet;
+  --color-tag4: lightgreen;
+  --color-tag5: orange;
+}
+
+label {
+  color: var(--color-label)
+}
+
+button {
+  background: var(--color-button);
+	color: var(--color-button-text);
+  border: none;
+	padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+button:hover {
+  background: var(--color-button-hover);
+  cursor: pointer;
+}
+button:disabled {
+  background: var(--color-disabled);
+  color: var(--color-background-mute);
+  cursor:not-allowed;
+  transition: background 0.5s;
+}
+
+input, textarea {
+  background-color: var(--color-background);
+	color: var(--color-text);
+	border: 2px solid var(--color-border);
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin: 2px 0;
+
+	padding: 5px 10px;
+  font-family: inherit;
+}
+input::disabled, textarea::disabled {
+  background: var(--color-background-mute);
+  color: var(--color-disabled);
+  transition: background 0.5s;
+}
+
+/* cherry-picked */
+/* Text Input */
+input[type="range"] {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	width: 100%;
+	outline: none;
+  
+  pointer-events: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+
+	width: 11px;
+	height: 18px;
+
+	background-color: var(--color-text-secondary);
+  border: none;
+	outline: 3px solid var(--color-text-secondary);
+  outline-offset: -1px;
+	border-radius: 2px;
+  pointer-events: initial;
+}
+input[type="range"]:focus::-webkit-slider-thumb,
+input[type="range"]:hover::-webkit-slider-thumb {
+	background-color: var(--color-text);
+  outline: 3px solid var(--color-text);
 }

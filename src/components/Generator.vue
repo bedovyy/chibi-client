@@ -1,86 +1,141 @@
 <script setup>
-import axios from 'axios';
-import { ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import TagAutocomplete from './TagAutocomplete.vue';
+import Dropdown from './Dropdown.vue';
+import DataManager from '@/assets/data-manager';
 
+const controller = DataManager.getInstance().controller;
+const isGenerating = DataManager.getInstance().isGenerating;
+
+const checkpoint = defineModel('ckpt', { default: null });
 const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiece, best quality" });
-const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
+const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
 const width = defineModel('width', { default: 832 });
 const height = defineModel('height', { default: 1216 });
 const steps = defineModel('steps', { default: 28})
 const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
 const seed = defineModel('seed', { default: -1 });
-const sampler_index = defineModel('sampler_index', { default: "Euler a" });
+const sampler_index = defineModel('sampler_index', { default: null });
+const scheduler = defineModel('scheduler', { default: null });
 
-const emit = defineEmits(['generated']);
+const maxSteps = DataManager.getInstance().maxSteps;
+const maxCfg = DataManager.getInstance().maxCfg;
 
-const isGenerating = ref(false);
+watch([steps, cfg_scale], ([newSteps, newCfg]) => {
+  steps.value = Math.max(1, Math.min(120, newSteps));
+  cfg_scale.value = newCfg.toString().slice(-1) == '.' ? newCfg : Math.max(0, Math.min(50, newCfg));
+})
 
-async function generate() {
-  isGenerating.value = true;
-  const params = {
-    "prompt": prompt.value,
-    "negative_prompt": negative_prompt.value,
-    "width": width.value,
-    "height": height.value,
-    "steps": steps.value,
-    "cfg_scale": cfg_scale.value,
-    "seed": seed.value,
-    "sampler_index": sampler_index.value,
-    "seed_resize_from_h": -1,
-    "seed_resize_from_w": -1,
-    "denoising_strength": null,
-    "n_iter": 1,
-    "batch_size": 1,
+let ckptList = null;
+let samplerList = null;
+let schedulerList = null;
+watch(controller, async (newVal, oldVal) => {
+  if (DataManager.getInstance().keepGenerationInfo.value) {
+    const info = DataManager.getInstance().getGenerationInfo();
+    if (info) {
+      checkpoint.value = info.checkpoint;
+      prompt.value = info.prompt;
+      negative_prompt.value = info.negative_prompt,
+      width.value = info.width;
+      height.value = info.height;
+      steps.value = info.steps;
+      cfg_scale.value = info.cfg_scale;
+      seed.value = info.seed; // do i need?
+      sampler_index.value = info.sampler_index;
+      scheduler.value = info.scheduler;
+    }
   }
 
-  const url = localStorage.getItem("webui_url");
-  if (!url) {
-    isGenerating.value = false;
-    return;
+  // set first if not in list
+  ckptList = newVal.getCheckpoints();
+  if (!checkpoint.value || !ckptList.includes(checkpoint.value)) {
+    checkpoint.value = ckptList[0];
   }
-  const res = await axios.post(`${url}/sdapi/v1/txt2img`, params);
-  if (res.status == 200) {
-    const base64image = `data:image/${getBase64FileExtension(res.data['images'][0])};base64,${res.data['images'][0]}`;
-    fetch(base64image).then(res => res.blob()).then(res => emit("generated", window.URL.createObjectURL(res)));
-    isGenerating.value = false;
+  samplerList = newVal.getSamplers();
+  if (!sampler_index.value || !samplerList.includes(sampler_index.value)) {
+    sampler_index.value = samplerList[0];
+  }
+  schedulerList = newVal.getSchedulers();
+  if (!scheduler.value || !schedulerList.includes(scheduler.value)) {
+    scheduler.value = schedulerList[0];
+  }
+});
+
+onMounted(() => {
+  window.addEventListener('keydown', keyboardShortcut);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', keyboardShortcut);
+})
+
+function keyboardShortcut(e) {
+  if (e.key == "Enter" && e.ctrlKey && !isGenerating.value) {
+    generate();
   }
 }
 
-function getBase64FileExtension(base64String) {
-  const charPerExt = { '/': 'jpeg', 'i': 'png', 'R': 'gif', 'U': 'webp', 'J': 'pdf'}
-  return charPerExt[base64String[0]] || 'unknown';
+async function generate() {
+  const info = {
+    checkpoint: checkpoint.value,
+    prompt: prompt.value,
+    negative_prompt: negative_prompt.value,
+    width: width.value,
+    height: height.value,
+    steps: steps.value,
+    cfg_scale: cfg_scale.value,
+    seed: seed.value,
+    sampler_index: sampler_index.value,
+  }
+  if (scheduler.value) {
+    info.scheduler = scheduler.value;
+  }
+  controller.value.generate(info);
 }
 </script>
 
 <template>
   <div class="generator-wrapper">
-    <label for="prompt">Prompt</label>
-    <textarea id="prompt" rows="4" v-model="prompt" ></textarea>
-    <label for="negative-prompt">Negative prompt</label>
-    <textarea id="negative-prompt" rows="3" v-model="negative_prompt"></textarea>
-    <label for="image-size">Image size</label>
-    <div class="row">
-      <div class="size">
-        <input v-model="width">
-        <div>✕</div>
-        <input v-model="height">
+    <div>
+      <label for="checkpoint">Checkpoint</label>
+      <Dropdown id="checkpoint" v-model="checkpoint" v-model:datalist="ckptList"></Dropdown>
+      <label for="prompt">Prompt</label>
+      <TagAutocomplete id="prompt" v-model="prompt"></TagAutocomplete>
+      <!-- <textarea id="prompt" rows="4" v-model="prompt"></textarea> -->
+      <label for="negative-prompt">Negative prompt</label>
+      <TagAutocomplete id="negative-prompt" v-model="negative_prompt"></TagAutocomplete>
+      <!-- <textarea id="negative-prompt" rows="3" v-model="negative_prompt"></textarea> -->
+      <label for="image-size">Image size</label>
+      <div class="row">
+        <div class="size">
+          <input v-model="width">
+          <div>✕</div>
+          <input v-model="height">
+        </div>
+      </div>
+      <div class="row"><label for="steps">Steps: </label><input style="width:4rem" v-model="steps"></div>
+      <input type="range" id="steps" min="1" :max="maxSteps" step="1" v-model="steps">
+      <div class="row"><label for="cfg_scale">CFG Scale:</label><input style="width:4rem" v-model="cfg_scale"></div>
+      <input type="range" id="cfg_scale" min="0" :max="maxCfg" step="0.1" v-model="cfg_scale">
+      <div class="row">
+        <div>
+          <label for="sampler_index">Sampler</label>
+          <!-- <input id="sampler_index" v-model="sampler_index"> -->
+          <Dropdown id="sampler_index" v-model="sampler_index" v-model:datalist="samplerList"></Dropdown>
+        </div>
+        <div v-if="schedulerList">
+          <label for="scheduler">Scheduler</label>
+          <!-- <input id="sampler_index" v-model="sampler_index"> -->
+          <Dropdown id="scheduler" v-model="scheduler" v-model:datalist="schedulerList"></Dropdown>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="seed">Seed</label>
+          <input id="seed" v-model="seed" >
+        </div>
       </div>
     </div>
-    <label for="steps">Steps: {{ steps }}</label>
-    <input type="range" id="steps" min="1" max="120" step="1" v-model="steps">
-    <label for="cfg_scale">CFG Scale: {{ cfg_scale }}</label>
-    <input type="range" id="cfg_scale" min="0" max="50" step="0.1" v-model="cfg_scale">
-    <div class="row">
-      <div>
-        <label for="seed">Seed</label>
-        <input id="seed" v-model="seed" >
-      </div>
-      <div>
-        <label for="sampler_index">Sampler</label>
-        <input id="sampler_index" v-model="sampler_index">
-      </div>
-    </div>
-    <button @click="generate" :disabled="isGenerating" >Generate</button>
+    <button class="generate-button" @click="generate" :disabled="!controller || isGenerating" >Generate</button>
   </div>
 </template>
 
@@ -89,11 +144,19 @@ function getBase64FileExtension(base64String) {
   width: 100%;
   height: 100%;
   position: relative;
-  padding: 10px;
+  //TODO: make class
+  >div {
+    padding: 10px;
+    overflow: auto;
+    height: calc(100% - 45px);  //TODO: no hard-coding for button size!
+  }
+  &:deep(>*) {
+    width: 100%;
+  }
 }
 
 label {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: bold;
   display: block;
 }
@@ -105,15 +168,18 @@ textarea {
 
 .row {
   display: flex;
+  gap: 20px;
   justify-content: space-between;
-  input {
+  align-items: center;
+  >div, input {
     width: 100%;
   }
 }
 
 .size {
-  display: flex;
   width: 100%;
+  display: flex;
+  align-items: center;
 
   div {
     min-width: 28px;
@@ -121,51 +187,16 @@ textarea {
   }
 }
 
-button {
+button.generate-button {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
-  height: 35px;
-  font-size: 18px;
+  height: 45px; //TODO: no hard-coding for button size!
+  font-size: 1.1rem;
   font-weight: bold;
 
   border-radius: 10px 10px 0 0;
 }
-
-// cherry-picked
-/* Text Input */
-input, textarea {
-  width: 100%;
-	text-align: left;
-}
-input[type="range"] {
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	appearance: none;
-	width: 100%;
-	outline: none;
-}
-input[type="range"]::-webkit-slider-thumb {
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	appearance: none;
-
-	width: 11px;
-	height: 18px;
-
-	background-color: var(--color-text-secondary);
-	border: none;
-
-	outline: 2px solid var(--color-text-secondary);
-	border-radius: 2px;
-}
-input[type="range"]:focus::-webkit-slider-thumb,
-input[type="range"]:hover::-webkit-slider-thumb {
-	background-color: var(--color-text);
-	outline: 2px solid var(--color-text);
-}
-
-
 </style>

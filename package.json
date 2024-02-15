@@ -1,6 +1,6 @@
 {
-  "name": "stablediffusionclient",
-  "version": "0.0.0",
+  "name": "chibiclient",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "axios": "^1.6.7",
-    "vue": "^3.4.15",
-    "vue-material-design-icons": "^5.2.0"
+    "textarea-caret": "github:component/textarea-caret-position",
+    "vue": "^3.4.15"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.3",

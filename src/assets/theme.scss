@@ -1,3 +1,54 @@
+:root.radio-black {
+  // --color-background: #13152c;
+  --color-background: #1f2937;
+  --color-background-soft: #191b31;
+  --color-background-mute: #22253f;
+  
+  // --color-border: #22253f;
+  --color-border: #374151;
+  --color-border-hover: #22253f;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+
+  --color-button: linear-gradient(to bottom right, #f97316, #ea580c);
+  --color-button-hover: #f97316;
+  --color-button-text: white;
+  --color-label: #e5e7eb;
+  --color-disabled: WhiteSmoke;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.radio-white {
+  --color-background: white;
+  --color-background-soft: #f9fafb;
+  --color-background-mute: #e5e7eb;
+
+  --color-border: #e5e7eb;
+  --color-border-hover: #93c5fd;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: #1f2937;
+  --color-text-secondary: #9ca3af;
+
+  --color-button: linear-gradient(to bottom right, #ffedd5, #fdba74);
+  --color-button-hover: linear-gradient(to bottom right, #ffedd5, #fed7aa);
+  --color-button-text: #ea580c;
+  --color-label: #9ca3af;
+  --color-disabled: WhiteSmoke;
+
+  --color-tag-1: maroon;
+  --color-tag0: dodgerblue;
+  --color-tag1: firebrick;
+  --color-tag2: maroon;
+  --color-tag3: darkorchid;
+  --color-tag4: darkgreen;
+  --color-tag5: darkorange;
+}
+
 :root.novellus {
   --color-background: #13152c;
   --color-background-soft: #191b31;
@@ -15,78 +66,8 @@
   --color-button-text: #191b31;
   --color-label: #f5f3c2;
   --color-disabled: WhiteSmoke;
-}
-:root.dark-radio {
-  --color-background: #13152c;
-  --color-background-soft: #191b31;
-  --color-background-mute: #22253f;
 
-  --color-border: #22253f;
-  --color-border-hover: #22253f;
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: #f3f4f6;
-  --color-text-secondary: #9ca3af;
-
-  --color-button: linear-gradient(to bottom right, #f97316, #ea580c);
-  --color-button-hover: #f97316;
-  --color-button-text: white;
-  --color-label: #e5e7eb;
-  --color-disabled: WhiteSmoke;
-}
-:root.white-radio {
-  --color-background: white;
-  --color-background-soft: #f9fafb;
-  --color-background-mute: #e5e7eb;
-
-  --color-border: #e5e7eb;
-  --color-border-hover: #93c5fd;
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: #1f2937;
-  --color-text-secondary: #9ca3af;
-
-  --color-button: linear-gradient(to bottom right, #ffedd5, #fdba74);
-  --color-button-hover: linear-gradient(to bottom right, #ffedd5, #fed7aa);
-  --color-button-text: #ea580c;
-  --color-label: #9ca3af;
-  --color-disabled: WhiteSmoke;
-}
-
-label {
-  color: var(--color-label)
-}
-
-button {
-  background: var(--color-button);
-	color: var(--color-button-text);
-  border: none;
-	padding: 5px 10px;
-  border-radius: 5px;
-
-  &:hover {
-    background: var(--color-button-hover);
-    cursor: pointer;
-  }
-  &:disabled {
-    background: var(--color-disabled);
-    color: var(--color-background-mute);
-    cursor:not-allowed;
-    transition: background 0.5s;
-  }
-}
-
-input, textarea {
-  background-color: var(--color-background);
-	color: var(--color-text);
-	border: 2px solid var(--color-border);
-  box-sizing: border-box;
-
-	padding: 5px 10px;
-
-  &:disabled {
-    background: var(--color-background-mute);
-    color: var(--color-disabled);
-    transition: background 0.5s;
+  .icon {
+    filter: invert(1);
   }
 }

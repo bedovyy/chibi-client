@@ -59,7 +59,8 @@
 }
 
 body {
-  min-height: 100vh;
+  height: 100svh;
+  overflow: hidden; /* it prevents swipe refresh and I don't know why */
   color: var(--color-text);
   background: var(--color-background);
   transition:
@@ -79,8 +80,13 @@ body {
     'Droid Sans',
     'Helvetica Neue',
     sans-serif;
-  font-size: 15px;
+  font-size: 1rem;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scrollbar-color: var(--color-text-secondary) var(--color-background);
+}
+
+input, textarea {
+  font-size: 1rem;
 }
