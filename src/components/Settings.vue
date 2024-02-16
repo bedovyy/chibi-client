@@ -113,16 +113,17 @@ function skipReset() {
   </div>
 
   <div class="section">
-    <h1>Reset settings</h1>
+    <h1>Reset settings <sup class="note">*keep the button pressed</sup></h1>
+    
     <div class="row">
-      <label for="reset">Reset settings by keep pressing the button</label>
+      <label for="reset">Reset settings</label>
       <button id="reset" ref="resetButtonEl" class="reset-button"
         @mousedown="resetSettings()" @mouseup="skipReset()" @mouseout="skipReset()"
         @touchstart="resetSettings()" @touchend="skipReset()"
       >RESET</button>
     </div>
     <div class="row">
-      <label for="clear-history">Clear history by keep pressing the button</label>
+      <label for="clear-history">Clear history</label>
       <button id="clear-history" ref="clearHistoryButtonEl" class="reset-button"
         @mousedown="clearHistory()" @mouseup="skipReset()" @mouseout="skipReset()"
         @touchstart="clearHistory()" @touchend="skipReset()"
@@ -150,6 +151,7 @@ function skipReset() {
     font-weight: bolder;
   }
   sup, sub {
+    display: inline-block;
     color: var(--color-text-secondary);
     font-size: 0.8rem;
     font-style: italic;
@@ -185,7 +187,7 @@ function skipReset() {
     justify-content: space-between;
     align-items: center;
     >*:first-child {
-      min-width: 140px;
+      min-width: 120px;
       width: 60%;
     }
 
@@ -199,11 +201,13 @@ function skipReset() {
 
     &.reverse-size {
       >*:last-child {
-      min-width: 140px;
+      min-width: 120px;
       width: 60%;
+      height: auto;
     }
 
     >*:first-child {
+      min-width: auto;
       width: 90px;
       height: 40px;
     }

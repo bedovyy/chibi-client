@@ -149,10 +149,12 @@ function toogleSettings(e) {
   <div class="preview" :class="{ generating: isGenerating }" @click="hideSidebar()">
     <img alt="Preview" class="preview-image" :src="currentImage" @error="noImg" />
   </div>
-  <div ref="sidebarEl" class="sidebar shirink">
-    <div class="history">
-      <img v-for="img in history" :class="{ selected: currentImage === img }" loading="lazy" :src="img" @click="onClickHistory(img)">
-      <!-- History -->
+  <div class="sidebar-wrapper">
+    <div ref="sidebarEl" class="sidebar shirink">
+      <div class="history">
+        <img v-for="img in history" :class="{ selected: currentImage === img }" loading="lazy" :src="img" @click="onClickHistory(img)">
+        <!-- History -->
+      </div>
     </div>
   </div>
 </main>
@@ -234,8 +236,6 @@ main {
 .preview {
   flex: 1;
   padding: 2rem;
-  // width: calc(100% - 600px);
-  // width: 60%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -325,6 +325,7 @@ main {
   width: 80%;
   padding: 10px 2%;
   color: white;
+  font-size: 0.8rem;
   text-align: center;
   background-color: #000a;
   border-radius: 20px;
@@ -341,16 +342,18 @@ main {
   header .right {
     display: initial;
   }
-  .sidebar {
+  .sidebar-wrapper {
     position: absolute;
     top: 30px;
     bottom: 0;
     right: 0;
     height: calc(100% - 30px);
-    transition: width 0.2s, min-width 0.2s;
+    overflow: hidden;
+  }
+  .sidebar {
+    transition: transform 0.2s;
     &.shirink {
-      min-width: 0;
-      width: 0;
+      transform: translateX(100%);
     }
   }
 }
@@ -362,7 +365,6 @@ main {
     min-width: 100%;
     transition: height 0.2s;
     overflow: hidden;
-
 
     &.shirink {
       height: 80px; //TODO: no hard-coding!
@@ -382,8 +384,8 @@ main {
   .preview {
     min-width: 100%;
   }
-  .sidebar {
-    height: calc(100% - 90px); //TODO: no hard-coding!
+  .sidebar-wrapper {
+    height: calc(100% - 110px); //TODO: no hard-coding!
   }
 }
 
