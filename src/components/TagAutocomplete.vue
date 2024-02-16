@@ -7,22 +7,23 @@ const rootEl = ref(null);
 const textareaEl = ref(null);
 const autocompleteEl = ref(null);
 const modelValue = defineModel({ default: '' });
-const props = defineProps({ autoHeight: { default: true } });
+
 const useTagautocomplete = DataManager.getInstance().useTagautocomplete;
 const taglist = DataManager.getInstance().taglist;
 const extraTaglist = DataManager.getInstance().extraTaglist;
+
 let filteredTagList = ref(null);
+let itemSelected = ref(-1);
+let wordForAutocomplete = null;
 let speciallyHide = ref(false);
 
-let wordForAutocomplete = null;
-let indexForContinue = -1;
-let itemSelected = ref(-1);
-
+watch(modelValue, () => nextTick(() => resizeTextArea()));
+const resizeObserver = new ResizeObserver(entries => {
+  entries.forEach(() => nextTick(() => resizeTextArea()));
+});
 
 onMounted(() => {
-  resizeTextArea();
-
-  //TODO: Do Resize Observer something...
+  resizeObserver.observe(textareaEl.value);
   document.addEventListener('click', clearAutocomplete);
 });
 
@@ -43,17 +44,13 @@ function clearAutocomplete(e) {
     //TODO: too many variables for initialize.
     filteredTagList.value = null;
     wordForAutocomplete = null;
-    indexForContinue = -1;
     itemSelected.value = -1;
   }
 }
 
 function resizeTextArea() {
-  // Do I need autoHeight enabler?
-  if (props.autoHeight) {
-    textareaEl.value.style.height = "auto";
-    textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
-  }
+  textareaEl.value.style.height = "auto";
+  textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
 }
 
 async function fullSearch(word) {
@@ -74,7 +71,6 @@ async function fullSearch(word) {
     if (test.includes(word.toLowerCase())) {
       filteredTagList.value.push(taglist.value[i]);
       if (filteredTagList.value.length >= 10) {
-        indexForContinue = i + 1;
         break;
       }
     }
@@ -180,7 +176,6 @@ function selectAutoComplete(index) {
   //TODO: too many things to do manually, and I don't want them.
   clearAutocomplete();
   textareaEl.value.focus();
-  resizeTextArea();
 }
 
 </script>
