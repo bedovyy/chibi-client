@@ -18,6 +18,9 @@ export default class ComfyUIController extends AController {
   type = null;
   arrayType = null;
 
+  // prompt_id
+  prompt_id = null;
+
   static async checkUrl(url) {
     try {
       const res = await axios.get(`${url}/system_stats`, { timeout: 3000 });
@@ -33,75 +36,60 @@ export default class ComfyUIController extends AController {
   async getHistory(promptId) {
     return await axios.get(`${this.url}/history/${promptId}`);
   }
-  // async getImage(filename, subfolder='', type='output') {
-  //   // const params = ;
-  //   return await axios.get(`${this.url}/view`, { params : { filename, subfolder, type }});
-  // }
 
   async getheringImages(prompt_id) {
     const history = await this.getHistory(prompt_id);
-    const outputs = Object.values(history.data[prompt_id].outputs);
-    outputs.forEach(outputNodes => {
-      Object.values(outputNodes.images).forEach(async imageInfo => {
-        // just pass comfy url.
-        // const image = await this.getImage(imageInfo.filename, imageInfo.subfolder, imageInfo.type);
-        this.listener(`${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`);
-        dataManager.isGenerating.value = false;
-      })
-    })
+    const outputs = history.data[prompt_id]?.outputs;
+    if (outputs) {
+      Object.values(outputs).forEach(outputNodes => {
+        Object.values(outputNodes.images).forEach(async imageInfo => {
+          this.listener(`${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`);
+          dataManager.isGenerating.value = false;
+          this.prompt_id = null;
+        });
+      });
+    }
   }
 
   async messageListener(e) {
+    console.log(Date() +" ws : message", e);
     const json = JSON.parse(e.data);
     dataManager.message.value = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
 
-    // dirty and clumsy ws disconnection solution.
-    // it doesn't reconnect ws and shouldn't.
-    if (json.type == "execution_start" || this.timeoutWS != null) {
-      if (this.timeoutWS) {
-        clearTimeout(this.timeoutWS);
-      }
-      this.timeoutWS = setTimeout(() => {
-        this.timeoutWS = null;
-        // force gethering.
-        if (dataManager.isGenerating.value) {
-          dataManager.isGenerating.value = true;
-          this.getheringImages(this.prompt_id);
-        }
-      }, 3000);
+    // clumsy ws hanging solution.
+    if (this.timeoutWS) {
+      this.timeoutWS = clearTimeout(this.timeoutWS);
     }
 
     if (json.data.node === null && json.data.prompt_id != null) {
       this.getheringImages(json.data.prompt_id);
-      this.prompt_id = null;
     }
   }
 
   async createWebSocket() {
     const urlForWebSocket = this.url.replaceAll('http', 'ws');
-    if (this.websocket) {
-      this.websocket.close();
-    }
     this.websocket = new WebSocket(`${urlForWebSocket}/ws?clientId=${this.clientId}`);
     this.websocket.onmessage = this.messageListener.bind(this);
     this.websocket.onopen = (e) => {
-      console.log("ws: open", e);
+      console.log(Date() +" ws: open", e);
+      if (dataManager.isGenerating && this.prompt_id) {
+        // collect missing image.
+        this.getheringImages(this.prompt_id);
+      }
     };
     this.websocket.onclose = (e) => {
-      console.log("ws: closed", e);
-      setTimeout(() => this.createWebSocket(), 500); // this doesn't ensure connection.
+      console.log(Date() +" ws: closed", e);
+      setTimeout(() => this.createWebSocket(), 1000);
       // dataManager.isGenerating.value = false;
     }
     this.websocket.onerror = (e) => {
-      console.log("ws: error", e);
-      dataManager.message.value = "WebSocket Closed" + e;
-      this.websocket.close();
+      console.log(Date() +" ws: error", e);
+      this.websocket.close(1002, "error occured");
     }
   }
 
   async prepare() {
     this.clientId = uuidv4();
-    //TODO: ws frequently disconnected on mobile. fix it.
     this.createWebSocket();
 
     const objectInfo = await axios.get(`${this.url}/object_info`);
@@ -132,12 +120,11 @@ export default class ComfyUIController extends AController {
     const saveImage = new this.node.SaveImage(decoder);
     saveImage.set("filename_prefix", "CHIBI");
 
-    if (this.websocket.readyState == WebSocket.CLOSED) {
-      this.createWebSocket();
-    }
-
     dataManager.isGenerating.value = true;
     const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: saveImage.toWorkflow(), client_id: this.clientId }));
     this.prompt_id = res.data.prompt_id;
+
+    // just in case ws hangs.
+    this.timeoutWS = setTimeout(() => this.createWebSocket(), 1000);
   }
 }
