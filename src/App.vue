@@ -392,4 +392,3 @@ main {
 /* @media (max-width:480px) {
 } */
 </style>
-@/assets/data-manager@/assets/data-manager
