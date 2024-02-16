@@ -94,17 +94,33 @@ export default class DataManager {
     location.reload();
   }
 
-  setGenerationInfo(info) {
-    if (info == null) {
-      return;
+  saveGenerationInfo(info) {
+    if (info != null) {
+      localStorage.setItem("chibi.generationInfo", JSON.stringify(info));
     }
-    localStorage.setItem("chibi.generationInfo", JSON.stringify(info));
   }
-  getGenerationInfo() {
-    if (!localStorage.getItem("chibi.generationInfo") || localStorage.getItem("chibi.generationInfo") == "null") {
+  loadGenerationInfo() {
+    const infoFromStorage = localStorage.getItem("chibi.generationInfo");
+    if (!infoFromStorage || infoFromStorage == "null") {
       return null;
     }
-    const info = JSON.parse(localStorage.getItem("chibi.generationInfo"));
-    return info;
+    return JSON.parse(infoFromStorage);
+  }
+
+  saveHistory(imageUrls) {
+    if(imageUrls != null) {
+      localStorage.setItem("chibi.history", imageUrls);
+    }
+  }
+  loadHistory() {
+    const historyFromStorage = localStorage.getItem("chibi.history");
+    if (!historyFromStorage || historyFromStorage == "null") {
+      return [];
+    }
+    return historyFromStorage.split(',');
+  }
+  clearHistory() {
+    localStorage.removeItem("chibi.history");
+    location.reload();
   }
 }

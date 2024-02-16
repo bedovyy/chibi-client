@@ -31,7 +31,7 @@ let samplerList = null;
 let schedulerList = null;
 watch(controller, async (newVal, oldVal) => {
   if (DataManager.getInstance().keepGenerationInfo.value) {
-    const info = DataManager.getInstance().getGenerationInfo();
+    const info = DataManager.getInstance().loadGenerationInfo();
     if (info) {
       checkpoint.value = info.checkpoint;
       prompt.value = info.prompt;

@@ -19,6 +19,7 @@ const trueOrFalse = [ true, false ];
 const themeList = DataManager.getInstance().getThemeList();
 
 const resetButtonEl = ref(null);
+const clearHistoryButtonEl = ref(null);
 let resetTimeout = null;
 
 onMounted(() => {
@@ -31,17 +32,26 @@ function reload() {
   location.reload();
 }
 
-function reset() {
+function resetSettings() {
   resetButtonEl.value.classList.add('pressing');
   resetTimeout = setTimeout(() => {
     DataManager.getInstance().resetSettings();
     resetCount = -1;
   }, 2000);
 }
+function clearHistory() {
+  clearHistoryButtonEl.value.classList.add('pressing');
+  resetTimeout = setTimeout(() => {
+    DataManager.getInstance().clearHistory();
+    resetCount = -1;
+  }, 2000);
+}
+
 function skipReset() {
   if (resetTimeout) {
     clearTimeout(resetTimeout);
     resetButtonEl.value.classList.remove('pressing');
+    clearHistoryButtonEl.value.classList.remove('pressing');
   }
   resetTimeout = null;
 }
@@ -76,6 +86,14 @@ function skipReset() {
       <label for="enable-danbooru-tags">Enable danbooru tag autocomplete</label>
       <Dropdown id="enable-danbooru-tags" v-model="useTagautocomplete" v-model:datalist="trueOrFalse"></Dropdown>
     </div>
+    <div class="row">
+      <label for="max-steps">Maximum steps</label>
+      <input id="max-steps" type="number" min="20" max="100" v-model="maxSteps">
+    </div>
+    <div class="row">
+      <label for="max-cfg">Maximum CFG scale</label>
+      <input id="max-cfg" type="number" maxlength="4" step="0.1" min="0" max="50" v-model="maxCfg">
+    </div>
   </div>
   
   <div class="section">
@@ -92,14 +110,6 @@ function skipReset() {
       <label for="font-size">Font size</label><span>{{ fontSize }}px</span>
       <input id="font-size" type="range" min="12" max="24" step="1" v-model="fontSize">
     </div>
-    <div class="row">
-      <label for="max-steps">Maximum steps</label>
-      <input id="max-steps" type="number" min="20" max="100" v-model="maxSteps">
-    </div>
-    <div class="row">
-      <label for="max-cfg">Maximum CFG scale</label>
-      <input id="max-cfg" type="number" maxlength="4" step="0.1" min="0" max="50" v-model="maxCfg">
-    </div>
   </div>
 
   <div class="section">
@@ -107,9 +117,16 @@ function skipReset() {
     <div class="row">
       <label for="reset">Reset settings by keep pressing the button</label>
       <button id="reset" ref="resetButtonEl" class="reset-button"
-        @mousedown="reset()" @mouseup="skipReset()" @mouseout="skipReset()"
-        @touchstart="reset()" @touchend="skipReset()"
+        @mousedown="resetSettings()" @mouseup="skipReset()" @mouseout="skipReset()"
+        @touchstart="resetSettings()" @touchend="skipReset()"
       >RESET</button>
+    </div>
+    <div class="row">
+      <label for="clear-history">Clear history by keep pressing the button</label>
+      <button id="clear-history" ref="clearHistoryButtonEl" class="reset-button"
+        @mousedown="clearHistory()" @mouseup="skipReset()" @mouseout="skipReset()"
+        @touchstart="clearHistory()" @touchend="skipReset()"
+      >CLEAR</button>
     </div>
   </div>
 </div>
@@ -148,6 +165,9 @@ function skipReset() {
   input[type="checkbox"] {
     height: 20px;
     max-height: 20px;
+  }
+  button {
+    margin: 1px 0;
   }
 
   span {

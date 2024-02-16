@@ -18,9 +18,7 @@ let wordForAutocomplete = null;
 let speciallyHide = ref(false);
 
 watch(modelValue, () => nextTick(() => resizeTextArea()));
-const resizeObserver = new ResizeObserver(entries => {
-  entries.forEach(() => nextTick(() => resizeTextArea()));
-});
+const resizeObserver = new ResizeObserver(entries => entries.forEach(() => nextTick(() => resizeTextArea())));
 
 onMounted(() => {
   resizeObserver.observe(textareaEl.value);

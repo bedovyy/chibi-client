@@ -120,7 +120,7 @@ export default class ComfyUIController extends AController {
 
   async generate(info) {
     if (dataManager.keepGenerationInfo.value) {
-      dataManager.setGenerationInfo(info);
+      dataManager.saveGenerationInfo(info);
     }
 
     const model = new this.node.CheckpointLoaderSimple(info.checkpoint);

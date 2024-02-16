@@ -11,12 +11,13 @@ import ComfyUIController from '@/assets/comfyui-controller';
 import WebUIController from '@/assets/webui-controller';
 import DataManager from '@/assets/data-manager';
 
-const history = ref([]);
 const generatorEl = ref();
 const sidebarEl = ref();
 const settingsEl = ref();
 
 const currentImage = ref(logo);
+const history = ref([]);
+
 const controller = DataManager.getInstance().controller;
 const isGenerating = DataManager.getInstance().isGenerating;
 
@@ -40,6 +41,7 @@ document.querySelector(":root").classList.add(theme.value);
 onMounted(() => {
   // move this to DataManager... which is data manager no more.
   connectServer();
+  history.value = DataManager.getInstance().loadHistory();
 });
 
 watch(isGenerating, (newVal, oldVal) => {
@@ -52,6 +54,7 @@ watch(isGenerating, (newVal, oldVal) => {
 function onGenerated(blob) {
   currentImage.value = blob;
   history.value.push(blob);
+  DataManager.getInstance().saveHistory(history.value);
 }
 
 function onClickHistory(src) {
@@ -148,7 +151,7 @@ function toogleSettings(e) {
   </div>
   <div ref="sidebarEl" class="sidebar shirink">
     <div class="history">
-      <img v-for="img in history" :class="{ selected: currentImage === img }" :src="img" @click="onClickHistory(img)">
+      <img v-for="img in history" :class="{ selected: currentImage === img }" loading="lazy" :src="img" @click="onClickHistory(img)">
       <!-- History -->
     </div>
   </div>
@@ -343,7 +346,7 @@ main {
     top: 30px;
     bottom: 0;
     right: 0;
-    height: calc(100% - 30px);  //TODO: no hard-coding!
+    height: calc(100% - 30px);
     transition: width 0.2s, min-width 0.2s;
     &.shirink {
       min-width: 0;
