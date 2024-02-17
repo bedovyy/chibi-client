@@ -12,7 +12,6 @@ async def get_chibi(request):
 async def get_chibi_root(request):
     subpath = request.match_info.get("subpath");
     subpath = 'index.html' if subpath == '' else subpath
-    print(request.path, subpath)
     return web.FileResponse(os.path.join(chibi_root, subpath))
 
 NODE_CLASS_MAPPINGS = {} # to prevent 'import: failed'
