@@ -17,6 +17,7 @@ export default class ComfyUIController extends AController {
   node = null;
   type = null;
   arrayType = null;
+  comfyObjects = null;
 
   // prompt_id
   prompt_id = null;
@@ -110,24 +111,58 @@ export default class ComfyUIController extends AController {
     return this.arrayType.KSampler.scheduler;
   }
 
+  makeTxt2ImgObject() {
+    this.comfyObjects = {
+      model: new this.node.CheckpointLoaderSimple(),
+      prompt: new this.node.CLIPTextEncode(),
+      negative: new this.node.CLIPTextEncode(),
+      emptyLatent: new this.node.EmptyLatentImage("", "", 1),
+      sampler: new this.node.KSampler(),
+      vae: new this.node.VAELoader(),
+      vaeDecoder: new this.node.VAEDecode(),
+      saveImage: new this.node.SaveImage(),
+    };
+    this.comfyObjects.prompt.set("clip", this.comfyObjects.model);
+    this.comfyObjects.negative.set("clip", this.comfyObjects.model.CLIP);
+    this.comfyObjects.sampler.set("model", this.comfyObjects.model.MODEL);
+    this.comfyObjects.sampler.set("positive", this.comfyObjects.prompt);
+    this.comfyObjects.sampler.set("negative", this.comfyObjects.negative);
+    this.comfyObjects.sampler.set("latent_image", this.comfyObjects.emptyLatent);
+    this.comfyObjects.sampler.set("denoise", 1.0);
+    this.comfyObjects.vaeDecoder.set("samples", this.comfyObjects.sampler);
+
+    this.comfyObjects.saveImage.set("filename_prefix", "CHIBI");
+    this.comfyObjects.saveImage.set("images", this.comfyObjects.vaeDecoder);
+  }
+
   async generate(info) {
     if (dataManager.keepGenerationInfo.value) {
       dataManager.saveGenerationInfo(info);
     }
 
-    const model = new this.node.CheckpointLoaderSimple(info.checkpoint);
-    const prompt = new this.node.CLIPTextEncode(info.prompt, model.CLIP);
-    const negative = new this.node.CLIPTextEncode(info.negative_prompt, model.CLIP);
-    const actualSeed = info.seed > 0 ? info.seed : Math.floor(Math.random() * 9999999998 + 1); // 0 for seed?
-    const sampler = new this.node.KSampler(model, actualSeed, info.steps, info.cfg_scale, info.sampler_index, info.scheduler, prompt, negative, new this.node.EmptyLatentImage(info.width, info.height, 1), 1.0);
-    const decoder = new this.node.VAEDecode(sampler, model);
-    const saveImage = new this.node.SaveImage(decoder, "CHIBI");
-    if (info.vae) {
-      decoder.set("vae", new this.node.VAELoader(info.vae));
+    if (!this.comfyObjects) {
+      this.makeTxt2ImgObject();
     }
+    const actualSeed = info.seed > 0 ? info.seed : Math.floor(Math.random() * 9999999998 + 1); // 0 for seed?
+    this.comfyObjects.model.set("ckpt_name", info.checkpoint);
+    this.comfyObjects.prompt.set("text", info.prompt);
+    this.comfyObjects.negative.set("text", info.negative_prompt);
+    this.comfyObjects.emptyLatent.set("width", info.width);
+    this.comfyObjects.emptyLatent.set("height", info.height);
+    this.comfyObjects.sampler.set("steps", info.steps);
+    this.comfyObjects.sampler.set("cfg", info.cfg_scale);
+    this.comfyObjects.sampler.set("sampler_name", info.sampler_index);
+    this.comfyObjects.sampler.set("scheduler", info.scheduler);
+    this.comfyObjects.sampler.set("seed", actualSeed);
+    if (vae.info) {
+      this.comfyObjects.vae.set("vae_name", vae.info);
+      this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.vae);
+    } else {
+      this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.model.VAE);
+    }    
 
     dataManager.isGenerating.value = true;
-    const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: saveImage.toWorkflow(), client_id: this.clientId }));
+    const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: this.comfyObjects.saveImage.toWorkflow(), client_id: this.clientId }));
     this.prompt_id = res.data.prompt_id;
 
     // just in case ws hangs.
