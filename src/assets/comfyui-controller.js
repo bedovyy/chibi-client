@@ -94,10 +94,14 @@ export default class ComfyUIController extends AController {
 
     const objectInfo = await axios.get(`${this.url}/object_info`);
     [this.node, this.type, this.arrayType] = generateComfyObjects(objectInfo.data);
+    console.log(this.node, this.type, this.arrayType);
   }
 
   getCheckpoints() {
     return this.arrayType.CheckpointLoaderSimple.ckpt_name;
+  }
+  getVAEs() {
+    return this.arrayType.VAELoader.vae_name;
   }
   getSamplers() {
     return this.arrayType.KSampler.sampler_name;
@@ -117,8 +121,10 @@ export default class ComfyUIController extends AController {
     const actualSeed = info.seed > 0 ? info.seed : Math.floor(Math.random() * 9999999998 + 1); // 0 for seed?
     const sampler = new this.node.KSampler(model, actualSeed, info.steps, info.cfg_scale, info.sampler_index, info.scheduler, prompt, negative, new this.node.EmptyLatentImage(info.width, info.height, 1), 1.0);
     const decoder = new this.node.VAEDecode(sampler, model);
-    const saveImage = new this.node.SaveImage(decoder);
-    saveImage.set("filename_prefix", "CHIBI");
+    const saveImage = new this.node.SaveImage(decoder, "CHIBI");
+    if (info.vae) {
+      decoder.set("vae", new this.node.VAELoader(info.vae));
+    }
 
     dataManager.isGenerating.value = true;
     const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: saveImage.toWorkflow(), client_id: this.clientId }));

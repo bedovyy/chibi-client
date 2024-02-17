@@ -8,6 +8,7 @@ const controller = DataManager.getInstance().controller;
 const isGenerating = DataManager.getInstance().isGenerating;
 
 const checkpoint = defineModel('ckpt', { default: null });
+const vae = defineModel('vae', { default: null});
 const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiece, best quality" });
 const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
 const width = defineModel('width', { default: 832 });
@@ -27,6 +28,7 @@ watch([steps, cfg_scale], ([newSteps, newCfg]) => {
 })
 
 let ckptList = null;
+let vaeList = null;
 let samplerList = null;
 let schedulerList = null;
 watch(controller, async (newVal, oldVal) => {
@@ -34,6 +36,7 @@ watch(controller, async (newVal, oldVal) => {
     const info = DataManager.getInstance().loadGenerationInfo();
     if (info) {
       checkpoint.value = info.checkpoint;
+      vae.value = info.vae;
       prompt.value = info.prompt;
       negative_prompt.value = info.negative_prompt,
       width.value = info.width;
@@ -50,6 +53,10 @@ watch(controller, async (newVal, oldVal) => {
   ckptList = newVal.getCheckpoints();
   if (!checkpoint.value || !ckptList.includes(checkpoint.value)) {
     checkpoint.value = ckptList[0];
+  }
+  vaeList = ["< none >", ...newVal.getVAEs()];
+  if (!vae.value || !vaeList.includes(vae.value)) {
+    vae.value = vaeList[0];
   }
   samplerList = newVal.getSamplers();
   if (!sampler_index.value || !samplerList.includes(sampler_index.value)) {
@@ -77,6 +84,7 @@ function keyboardShortcut(e) {
 async function generate() {
   const info = {
     checkpoint: checkpoint.value,
+    vae: (vae.value == "< none >") ? null : vae.value,
     prompt: prompt.value,
     negative_prompt: negative_prompt.value,
     width: width.value,
@@ -96,8 +104,13 @@ async function generate() {
 <template>
   <div class="generator-wrapper">
     <div>
-      <label for="checkpoint">Checkpoint</label>
-      <Dropdown id="checkpoint" v-model="checkpoint" v-model:datalist="ckptList"></Dropdown>
+      <details>
+        <summary>Models</summary>
+        <label for="checkpoint">Checkpoint</label>
+        <Dropdown id="checkpoint" v-model="checkpoint" v-model:datalist="ckptList"></Dropdown>
+        <label for="vae">VAE</label>
+        <Dropdown id="vae" v-model="vae" v-model:datalist="vaeList"></Dropdown>
+      </details>
       <label for="prompt">Prompt</label>
       <TagAutocomplete id="prompt" v-model="prompt"></TagAutocomplete>
       <!-- <textarea id="prompt" rows="4" v-model="prompt"></textarea> -->
@@ -152,6 +165,16 @@ async function generate() {
   }
   &:deep(>*) {
     width: 100%;
+  }
+}
+
+details {
+  background-color: #7773;
+  padding: 4px;
+  border-radius: 8px;
+  summary {
+    font-size: 0.8rem;
+    font-weight: bold;
   }
 }
 
