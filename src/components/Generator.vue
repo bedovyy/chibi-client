@@ -22,6 +22,12 @@ const scheduler = defineModel('scheduler', { default: null });
 const maxSteps = DataManager.getInstance().maxSteps;
 const maxCfg = DataManager.getInstance().maxCfg;
 
+const isDetailsOpen = ref(false);
+const detailsText = computed(() => !isDetailsOpen.value && checkpoint.value ? checkpoint.value : "");
+function toggleModels(e) {
+  isDetailsOpen.value = e.newState == "open"
+}
+
 watch([steps, cfg_scale], ([newSteps, newCfg]) => {
   steps.value = Math.max(1, Math.min(120, newSteps));
   cfg_scale.value = newCfg.toString().slice(-1) == '.' ? newCfg : Math.max(0, Math.min(50, newCfg));
@@ -104,8 +110,8 @@ async function generate() {
 <template>
   <div class="generator-wrapper">
     <div>
-      <details>
-        <summary>Models</summary>
+      <details @toggle="toggleModels">
+        <summary>Models <span>{{ detailsText }}</span></summary>
         <label for="checkpoint">Checkpoint</label>
         <Dropdown id="checkpoint" v-model="checkpoint" v-model:datalist="ckptList"></Dropdown>
         <label for="vae">VAE</label>
