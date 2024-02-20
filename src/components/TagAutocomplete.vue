@@ -47,8 +47,10 @@ function clearAutocomplete(e) {
 }
 
 function resizeTextArea() {
-  textareaEl.value.style.height = "auto";
-  textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
+  if (textareaEl.value) {
+    textareaEl.value.style.height = "auto";
+    textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
+  }
 }
 
 async function fullSearch(word) {
@@ -64,7 +66,7 @@ async function fullSearch(word) {
       }
     }
   }
-  for (let i = 0; i < taglist.value.length; i++ ) {
+  for (let i = 0; i < taglist.value.length; i++) {
     const test = [taglist.value[i][0], taglist.value[i][3]].join().toLowerCase();
     if (test.includes(word.toLowerCase())) {
       filteredTagList.value.push(taglist.value[i]);
@@ -83,7 +85,7 @@ async function fullSearch(word) {
 
 //TODO: REFACTORING!! seperate autocomplete feature with TagAutocomplete.
 function refreshAutocomplete(e) {
-  if(!useTagautocomplete.value) {
+  if (!useTagautocomplete.value) {
     return;
   }
 
@@ -100,7 +102,7 @@ function refreshAutocomplete(e) {
   // textListForAutocomplete has only one text btw.
   const textListForAutocomplete = (textInTextArea.substring(0, lastIndex).match(/[^,\s()][^,\n()]*$/));
   //TODO: it has an issue when clicking range selected text on text area.
-  if(textListForAutocomplete == null || textareaEl.value.selectionStart != textareaEl.value.selectionEnd) {
+  if (textListForAutocomplete == null || textareaEl.value.selectionStart != textareaEl.value.selectionEnd) {
     clearAutocomplete();
     return;
   }
@@ -125,17 +127,17 @@ function refreshAutocomplete(e) {
 }
 
 function navigateAutocomplete(e) {
-  if (filteredTagList.value == null || filteredTagList.value.length == 0 || speciallyHide.value){
+  if (filteredTagList.value == null || filteredTagList.value.length == 0 || speciallyHide.value) {
     return;
   }
 
-  switch(e.key) {
+  switch (e.key) {
     case "ArrowDown":
-      itemSelected.value = Math.min(filteredTagList.value.length -1, Math.max(0, itemSelected.value + 1));
+      itemSelected.value = Math.min(filteredTagList.value.length - 1, Math.max(0, itemSelected.value + 1));
       e.preventDefault();
       break;
     case "ArrowUp":
-      itemSelected.value = Math.min(filteredTagList.value.length -1, Math.max(0, itemSelected.value - 1));
+      itemSelected.value = Math.min(filteredTagList.value.length - 1, Math.max(0, itemSelected.value - 1));
       e.preventDefault();
       break;
     case "Enter":
@@ -167,7 +169,7 @@ function selectAutoComplete(index) {
   const caretPosition = replacedText.length;
   replacedText += modelValue.value.substring(lastIndex);
   modelValue.value = replacedText;
-  
+
   //TODO: this breaks history(ctrl+z). need to change v-model to @input to fix it.
   nextTick(() => textareaEl.value.setSelectionRange(caretPosition, caretPosition));
 
@@ -179,22 +181,15 @@ function selectAutoComplete(index) {
 </script>
 <template>
   <div ref="rootEl" class="autocomplete-wrapper">
-      <textarea
-        ref="textareaEl"
-        class="autocomplete"
-        rows="3"
-        v-model="modelValue"
-        @input="resizeTextArea"
-        @keydown="navigateAutocomplete"
-        @keyup="refreshAutocomplete"
-        @mouseup="refreshAutocomplete"
-      >
+    <textarea ref="textareaEl" class="autocomplete" rows="3" v-model="modelValue" @input="resizeTextArea"
+      @keydown="navigateAutocomplete" @keyup="refreshAutocomplete" @mouseup="refreshAutocomplete">
       </textarea>
     <ul v-show="filteredTagList?.length && !speciallyHide" ref="autocompleteEl" class="autocomplete">
-      <li v-for="tag, index in filteredTagList" :class="{selected: itemSelected == index}" @click="selectAutoComplete(index)" :style="`color: var(--color-tag${tag[1]})`">
+      <li v-for="tag, index in filteredTagList" :class="{ selected: itemSelected == index }"
+        @click="selectAutoComplete(index)" :style="`color: var(--color-tag${tag[1]})`">
         <div class="tag-item">
-        {{ tag[0] }}
-        <sub v-show="!Number.isInteger(Number(tag[2]))">{{ tag[2] }}</sub>
+          {{ tag[0] }}
+          <sub v-show="!Number.isInteger(Number(tag[2]))">{{ tag[2] }}</sub>
         </div>
       </li>
     </ul>
@@ -207,10 +202,11 @@ function selectAutoComplete(index) {
   >* {
     width: 100%;
   }
+
   >textarea {
     resize: none;
   }
-  
+
   >ul.autocomplete {
     list-style: none;
     position: absolute;
@@ -224,18 +220,22 @@ function selectAutoComplete(index) {
     border-radius: 10px;
     z-index: 2;
     cursor: pointer;
+
     >li {
       padding: 6px;
       // border: 1px solid black;
 
-      &.selected, &:hover {
+      &.selected,
+      &:hover {
         background-color: var(--color-background-mute);
       }
+
       >div.tag-item {
         display: flex;
         gap: 0 10px;
         justify-content: space-between;
         align-items: flex-end;
+
         sub {
           font-size: 0.7rem;
           font-style: italic;

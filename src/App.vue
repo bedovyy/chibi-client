@@ -64,7 +64,7 @@ function onClickHistory(src) {
 async function connectServer() {
   let urlForTest = url.value;
   urlForTest = urlForTest.replaceAll(/^http:\/\//g, '').replaceAll(/^https:\/\//g, '').replaceAll(/\/$/g, '');
-  
+
   // try http first
   const testUrl = `${window.location.protocol}//${urlForTest}`;
   if (await WebUIController.checkUrl(testUrl)) {
@@ -128,42 +128,40 @@ function toogleSettings(e) {
 </script>
 
 <template>
-<header>
-  <div class="left">
-    <h1 class="title">Chibi</h1>
-    <img class="icon-settings icon" :src="iconSettings" @click="toogleSettings">
-  </div>
-  <div class="right">
-    <img class="icon-history icon" :src="iconHistory" @click="toggleSidebar">
-  </div>
-</header>
-<main>
-  <div ref="generatorEl" class="generator">
-    <div class="generator-slider"
-      @click="toggleGenerator"
-      @touchmove="slideGenerator"
-      @touchend="slideGenerator"
-    ><span>|||</span></div>
-    <Generator class="generator-component" />
-  </div>
-  <div class="preview" :class="{ generating: isGenerating }" @click="hideSidebar()">
-    <img alt="Preview" class="preview-image" :src="currentImage" @error="noImg" />
-  </div>
-  <div class="sidebar-wrapper">
-    <div ref="sidebarEl" class="sidebar shirink">
-      <div class="history">
-        <img v-for="img in history" :class="{ selected: currentImage === img }" v-lazy="img" @click="onClickHistory(img)">
-        <!-- History -->
+  <header>
+    <div class="left">
+      <h1 class="title">Chibi</h1>
+      <img class="icon-settings icon" :src="iconSettings" @click="toogleSettings">
+    </div>
+    <div class="right">
+      <img class="icon-history icon" :src="iconHistory" @click="toggleSidebar">
+    </div>
+  </header>
+  <main>
+    <div ref="generatorEl" class="generator">
+      <div class="generator-slider" @click="toggleGenerator" @touchmove="slideGenerator" @touchend="slideGenerator">
+        <span>|||</span></div>
+      <Generator class="generator-component" />
+    </div>
+    <div class="preview" :class="{ generating: isGenerating }" @click="hideSidebar()">
+      <img alt="Preview" class="preview-image" :src="currentImage" @error="noImg" />
+    </div>
+    <div class="sidebar-wrapper">
+      <div ref="sidebarEl" class="sidebar shirink">
+        <div class="history">
+          <img v-for="img in history" :class="{ selected: currentImage === img }" v-lazy="img"
+            @click="onClickHistory(img)">
+          <!-- History -->
+        </div>
       </div>
     </div>
+  </main>
+  <div ref="settingsEl" class="modal shirink" @mousedown="toogleSettings">
+    <Settings></Settings>
   </div>
-</main>
-<div ref="settingsEl" class="modal shirink" @mousedown="toogleSettings">
-  <Settings></Settings>
-</div>
-<div class="toaster" :class="{ shirink: !isGenerating }">
-  {{ message }}
-</div>
+  <div class="toaster" :class="{ shirink: !isGenerating }">
+    {{ message }}
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -174,6 +172,7 @@ header {
   justify-content: space-between;
   gap: 10px;
   padding: 1px 10px;
+
   .icon {
     cursor: pointer;
   }
@@ -182,26 +181,31 @@ header {
     display: flex;
     width: 80%;
     overflow-x: auto;
+
     h1.title {
-      font-size: 24px;  // it should be pixel unit, because it is title!
+      font-size: 24px; // it should be pixel unit, because it is title!
       line-height: 24px;
       font-weight: bolder;
     }
+
     button {
       width: 95px;
     }
+
     .icon {
       width: 24px;
       object-fit: contain;
       margin-bottom: 8px;
     }
   }
+
   .right {
     display: none;
     width: 24px;
     text-align: right;
   }
 }
+
 main {
   width: 100%;
   height: calc(100% - 30px);
@@ -210,6 +214,7 @@ main {
   justify-content: space-between;
   align-items: stretch;
 }
+
 .generator {
   min-width: 400px;
   max-width: 450px;
@@ -227,6 +232,7 @@ main {
     width: 100%;
     height: 35px; //TODO: no hard-coding!
     z-index: 1;
+
     >span {
       vertical-align: middle;
     }
@@ -253,18 +259,20 @@ main {
   @keyframes generating {
     0% {
       box-shadow:
-      0px 0px 0px 100px #181818 inset,
-      0px 0px 0px 102px #FFFFFF00 inset;
+        0px 0px 0px 100px #181818 inset,
+        0px 0px 0px 102px #FFFFFF00 inset;
     }
+
     50% {
       box-shadow:
-      0px 0px 0px -2px #181818 inset,
-      0px 0px 0px 0px #FFFFFF40 inset;
+        0px 0px 0px -2px #181818 inset,
+        0px 0px 0px 0px #FFFFFF40 inset;
     }
+
     100% {
       box-shadow:
-      0px 0px 0px -2px #181818 inset,
-      0px 0px 0px 0px #FFFFFF40 inset;
+        0px 0px 0px -2px #181818 inset,
+        0px 0px 0px 0px #FFFFFF40 inset;
     }
   }
 }
@@ -285,8 +293,10 @@ main {
     flex-direction: column-reverse;
     gap: 10px;
     padding: 3px;
+
     >img {
       cursor: pointer;
+
       &.selected {
         outline: 2px solid var(--color-text);
       }
@@ -342,6 +352,7 @@ main {
   header .right {
     display: initial;
   }
+
   .sidebar-wrapper {
     position: absolute;
     top: 30px;
@@ -350,8 +361,10 @@ main {
     height: calc(100% - 30px);
     overflow: hidden;
   }
+
   .sidebar {
     transition: transform 0.2s;
+
     &.shirink {
       transform: translateX(100%);
     }
@@ -368,6 +381,7 @@ main {
 
     &.shirink {
       height: 80px; //TODO: no hard-coding!
+
       :deep(*) {
         overflow: hidden !important;
       }
@@ -376,6 +390,7 @@ main {
     .generator-component {
       height: calc(100% - 35px); //TODO: no hard-coding!
     }
+
     .generator-slider {
       display: block;
     }
@@ -384,11 +399,11 @@ main {
   .preview {
     min-width: 100%;
   }
+
   .sidebar-wrapper {
     height: calc(100% - 110px); //TODO: no hard-coding!
   }
 }
 
 /* @media (max-width:480px) {
-} */
-</style>
+} */</style>

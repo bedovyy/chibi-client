@@ -1,7 +1,7 @@
 <script setup>
 import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 const modelValue = defineModel({ default: '' });
-const datalist = defineModel('datalist', { default : [] });
+const datalist = defineModel('datalist', { default: [] });
 const rootEl = ref(null);
 const isListOpened = ref(false);
 
@@ -21,12 +21,14 @@ function hideList(e) {
 
 </script>
 <template>
-<div ref="rootEl" class="dropdown-wrapper">
-  <div class="dropdown-selected" :class="{ open : isListOpened }" tabindex="0" @click="isListOpened = !isListOpened">{{ modelValue }}</div>
-  <ul v-show="isListOpened" class="dropdown-list">
-    <li v-for="item in datalist" class="dropdown-item" :class="{ selected: item == modelValue}" @click="modelValue = item; isListOpened = false">{{ item }}</li>
-  </ul>
-</div>
+  <div ref="rootEl" class="dropdown-wrapper">
+    <div class="dropdown-selected" :class="{ open: isListOpened }" tabindex="0" @click="isListOpened = !isListOpened">{{
+      modelValue }}</div>
+    <ul v-show="isListOpened" class="dropdown-list">
+      <li v-for="item in datalist" class="dropdown-item" :class="{ selected: item == modelValue }"
+        @click="modelValue = item; isListOpened = false">{{ item }}</li>
+    </ul>
+  </div>
 </template>
 <style scoped lang="scss">
 .dropdown-wrapper {
@@ -38,6 +40,7 @@ function hideList(e) {
   border-radius: 8px;
   box-sizing: border-box;
   margin: 2px 0;
+
   .dropdown-selected {
     display: flex;
     align-items: center;
@@ -48,18 +51,20 @@ function hideList(e) {
     font-family: inherit;
     cursor: pointer;
     font-size: 1rem;
+
     &:after {
       position: absolute;
-      content:'▼';
+      content: '▼';
       font-size: 16px;
       right: 10px;
       top: auto;
       bottom: auto;
       transition: all 0.2s;
     }
+
     &.open {
       outline: -webkit-focus-ring-color auto 1px;
-      
+
       &:after {
         transform: rotate(180deg);
       }
@@ -86,14 +91,14 @@ function hideList(e) {
     border-radius: 10px;
     z-index: 2;
     cursor: pointer;
+
     >li {
       padding: 6px;
 
-      &.selected, &:hover {
+      &.selected,
+      &:hover {
         background-color: var(--color-background-mute);
       }
     }
   }
-}
-
-</style>
+}</style>

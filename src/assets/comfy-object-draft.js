@@ -13,10 +13,10 @@ export function generateComfyObjects(jsonObject) {
       }
       Object.keys(input).forEach(inputName => {
         const inputType = input[inputName];
-        if (!Array.isArray(inputType)){
+        if (!Array.isArray(inputType)) {
           console.err(`inputType ${inputType} for ${nodeName} is not array`);
         }
-        const specialType = [ "*", "INT", "FLOAT", "STRING" ];
+        const specialType = ["*", "INT", "FLOAT", "STRING"];
         const cand = inputType[0];
         if (Array.isArray(cand)) {
           // console.log(nodeName, inputName, cand);
@@ -25,13 +25,13 @@ export function generateComfyObjects(jsonObject) {
           }
           arrayType[nodeName][inputName] = cand;
         } else if (!specialType.includes(cand) && !type[cand]) {
-          type[cand] = class {};
+          type[cand] = class { };
         }
       });
     });
   });
   console.log("type created");
-  
+
   // making nodes
   let node = {};
   Object.keys(jsonObject).forEach(nodeName => {
@@ -60,7 +60,7 @@ export function generateComfyObjects(jsonObject) {
         if (jsonObject[nodeName].output) {
           this.output = jsonObject[nodeName].output;
           for (let i = 0; i < this.output.length; i++) {
-            this[this.output[i]] = [ this, i ];
+            this[this.output[i]] = [this, i];
           }
         }
       };
@@ -72,16 +72,16 @@ export function generateComfyObjects(jsonObject) {
           this[arg] = undefined;
           return;
         }
-        
-        const candidates = [ this.required, this.optional];
-        
+
+        const candidates = [this.required, this.optional];
+
         for (let i = 0; i < candidates.length; i++) {
           // e.g. KSampler.set(positive, new CLIPTextEncode(CLIP, "1girl,"))
 
           // !!!!! REFACTORING NEEEEEEEDEDDDDDD !!!!!
           if (!Array.isArray(value) && !Object.keys(node).includes(value.name)) { // it should be specialType
             const type = candidates[i][arg][0];
-            const specialType = [ "*", "BOOLEAN", "INT", "FLOAT", "STRING" ];
+            const specialType = ["*", "BOOLEAN", "INT", "FLOAT", "STRING"];
 
             if (Array.isArray(type)) {
               if (type.includes(value)) {
@@ -121,18 +121,18 @@ export function generateComfyObjects(jsonObject) {
         let json = {};
         json[this.id] = {};
         const args = [this.required, this.optional];
-        if(this.required || this.optional) {
+        if (this.required || this.optional) {
           json[this.id]["inputs"] = {};
         }
 
         args.forEach(eachArgs => {
-          if(eachArgs) {
+          if (eachArgs) {
             Object.keys(eachArgs).forEach(arg => {
               if (this[arg] == undefined) {
                 throw Error(`Missing argument: ${arg} on ${this.id}`);
               }
               // console.log(arg, this[arg]);
-              json[this.id]["inputs"][arg] = Array.isArray(this[arg]) ? this[arg].slice(): this[arg];
+              json[this.id]["inputs"][arg] = Array.isArray(this[arg]) ? this[arg].slice() : this[arg];
               if (Array.isArray(this[arg]) && Object.keys(node).includes(this[arg][0].name)) {
                 nodesToAppend.push(this[arg][0]);
                 json[this.id]["inputs"][arg][0] = this[arg][0].id;
@@ -148,7 +148,7 @@ export function generateComfyObjects(jsonObject) {
         nodesToAppend.forEach(additionalNode => {
           json = Object.assign(json, additionalNode.toWorkflow());
         });
-        return json; 
+        return json;
       }
     }
     Object.defineProperty(node[nodeName], 'name', { value: nodeName });

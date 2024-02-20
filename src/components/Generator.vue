@@ -8,12 +8,12 @@ const controller = DataManager.getInstance().controller;
 const isGenerating = DataManager.getInstance().isGenerating;
 
 const checkpoint = defineModel('ckpt', { default: null });
-const vae = defineModel('vae', { default: null});
+const vae = defineModel('vae', { default: null });
 const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiece, best quality" });
 const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
 const width = defineModel('width', { default: 832 });
 const height = defineModel('height', { default: 1216 });
-const steps = defineModel('steps', { default: 28})
+const steps = defineModel('steps', { default: 28 })
 const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
 const seed = defineModel('seed', { default: -1 });
 const sampler_index = defineModel('sampler_index', { default: null });
@@ -44,7 +44,7 @@ watch(controller, async (newVal, oldVal) => {
       checkpoint.value = info.checkpoint;
       vae.value = info.vae;
       prompt.value = info.prompt;
-      negative_prompt.value = info.negative_prompt,
+      negative_prompt.value = info.negative_prompt;
       width.value = info.width;
       height.value = info.height;
       steps.value = info.steps;
@@ -150,11 +150,11 @@ async function generate() {
       <div class="row">
         <div>
           <label for="seed">Seed</label>
-          <input id="seed" v-model="seed" >
+          <input id="seed" v-model="seed">
         </div>
       </div>
     </div>
-    <button class="generate-button" @click="generate" :disabled="!controller || isGenerating" >Generate</button>
+    <button class="generate-button" @click="generate" :disabled="!controller || isGenerating">Generate</button>
   </div>
 </template>
 
@@ -163,12 +163,14 @@ async function generate() {
   width: 100%;
   height: 100%;
   position: relative;
+
   //TODO: make class
   >div {
     padding: 10px;
     overflow: auto;
-    height: calc(100% - 45px);  //TODO: no hard-coding for button size!
+    height: calc(100% - 45px); //TODO: no hard-coding for button size!
   }
+
   &:deep(>*) {
     width: 100%;
   }
@@ -178,6 +180,7 @@ details {
   background-color: #7773;
   padding: 4px;
   border-radius: 8px;
+
   summary {
     font-size: 0.8rem;
     font-weight: bold;
@@ -200,7 +203,9 @@ textarea {
   gap: 20px;
   justify-content: space-between;
   align-items: center;
-  >div, input {
+
+  >div,
+  input {
     width: 100%;
   }
 }
