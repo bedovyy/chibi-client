@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DataManager from '@/assets/data-manager';
 
@@ -17,6 +17,9 @@ const keepGenerationInfo = DataManager.getInstance().keepGenerationInfo;
 const useTagautocomplete = DataManager.getInstance().useTagautocomplete;
 const trueOrFalse = [ true, false ];
 const themeList = DataManager.getInstance().getThemeList();
+const imageFormat = DataManager.getInstance().imageFormat;
+const imageFormatList = [ "webp", "png" ];
+const imageQuality = DataManager.getInstance().imageQuality;
 
 const resetButtonEl = ref(null);
 const clearHistoryButtonEl = ref(null);
@@ -78,6 +81,14 @@ function skipReset() {
 
   <div class="section">
     <h1>Generator</h1>
+    <div class="row">
+      <label for="imageFormat">File format for images</label>
+      <Dropdown id="imageFormat" v-model="imageFormat" v-model:datalist="imageFormatList"></Dropdown>
+    </div>
+    <div class="row">
+      <label for="imageQuality">Webp quality</label><span v-show="imageFormat != 'png'">{{ imageQuality }}%</span>
+      <input id="imageQuality" type="range" min="50" max="100" step="10" :disabled="imageFormat == 'png'" v-model="imageQuality">
+    </div>
     <div class="row">
       <label for="keep-generator-info">Keep generator infomation</label>
       <Dropdown id="keep-generator-info" v-model="keepGenerationInfo" v-model:datalist="trueOrFalse"></Dropdown>
@@ -167,6 +178,10 @@ function skipReset() {
   input[type="checkbox"] {
     height: 20px;
     max-height: 20px;
+  }
+  input[type="range"]:disabled::-webkit-slider-thumb {
+    background-color: var(--color-background-soft);
+    outline: 3px solid var(--color-background-soft);
   }
   button {
     margin: 1px 0;

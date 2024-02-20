@@ -53,7 +53,7 @@ export default class ComfyUIController extends AController {
   }
 
   async messageListener(e) {
-    console.log(Date() +" ws : message", e);
+    console.log(Date() + " ws : message", e);
     const json = JSON.parse(e.data);
     dataManager.message.value = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
 
@@ -72,19 +72,19 @@ export default class ComfyUIController extends AController {
     this.websocket = new WebSocket(`${urlForWebSocket}/ws?clientId=${this.clientId}`);
     this.websocket.onmessage = this.messageListener.bind(this);
     this.websocket.onopen = (e) => {
-      console.log(Date() +" ws: open", e);
+      console.log(Date() + " ws: open", e);
       if (dataManager.isGenerating && this.prompt_id) {
         // collect missing image.
         this.getheringImages(this.prompt_id);
       }
     };
     this.websocket.onclose = (e) => {
-      console.log(Date() +" ws: closed", e);
+      console.log(Date() + " ws: closed", e);
       setTimeout(() => this.createWebSocket(), 1000);
       // dataManager.isGenerating.value = false;
     }
     this.websocket.onerror = (e) => {
-      console.log(Date() +" ws: error", e);
+      console.log(Date() + " ws: error", e);
       this.websocket.close(1002, "error occured");
     }
   }
@@ -121,6 +121,7 @@ export default class ComfyUIController extends AController {
       vae: new this.node.VAELoader(),
       vaeDecoder: new this.node.VAEDecode(),
       saveImage: new this.node.SaveImage(),
+      saveImageWebp: new this.node.SaveAnimatedWEBP(null, "CHIBI", 0.01, false, dataManager.imageQuality.value, "default"),
     };
     this.comfyObjects.prompt.set("clip", this.comfyObjects.model);
     this.comfyObjects.negative.set("clip", this.comfyObjects.model.CLIP);
@@ -133,6 +134,7 @@ export default class ComfyUIController extends AController {
 
     this.comfyObjects.saveImage.set("filename_prefix", "CHIBI");
     this.comfyObjects.saveImage.set("images", this.comfyObjects.vaeDecoder);
+    this.comfyObjects.saveImageWebp.set("images", this.comfyObjects.vaeDecoder);
   }
 
   async generate(info) {
@@ -159,10 +161,12 @@ export default class ComfyUIController extends AController {
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.vae);
     } else {
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.model.VAE);
-    }    
+    }
 
+    this.comfyObjects.saveImageWebp.set("quality", dataManager.imageQuality.value);
+    const target = (dataManager.imageFormat.value == 'webp') ? this.comfyObjects.saveImageWebp : this.comfyObjects.saveImage;
     dataManager.isGenerating.value = true;
-    const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: this.comfyObjects.saveImage.toWorkflow(), client_id: this.clientId }));
+    const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: target.toWorkflow(), client_id: this.clientId }));
     this.prompt_id = res.data.prompt_id;
 
     // just in case ws hangs.

@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { parseCSV } from '@/assets/utils';
 
 import taglistCSV from '/taglist/danbooru2023-compact.csv';
@@ -17,6 +17,21 @@ const historyWidth = ref(150);
 const fontSize = ref(16);
 const maxSteps = ref(60);
 const maxCfg = ref(20);
+const imageFormat = ref("webp");  // webp, png
+const imageQuality = ref(70);
+
+const settingsArray = [
+  url,
+  keepGenerationInfo,
+  useTagautocomplete,
+  theme,
+  historyWidth,
+  fontSize,
+  maxSteps,
+  maxCfg,
+  imageFormat,
+  imageQuality
+];
 
 // api controller
 const controller = ref(null);
@@ -26,8 +41,8 @@ const isGenerating = ref(false);
 // tagautocomplete
 const taglist = ref();
 const extraTaglist = ref();
-fetch(taglistCSV).then(res => res.text()).then(text => { taglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')','\\)')); });
-fetch(extraCSV).then(res => res.text()).then(text => { extraTaglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')','\\)')); });
+fetch(taglistCSV).then(res => res.text()).then(text => { taglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
+fetch(extraCSV).then(res => res.text()).then(text => { extraTaglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
 
 export default class DataManager {
   constructor(_token) {
@@ -35,25 +50,31 @@ export default class DataManager {
       throw new Error("Use DataManager.getInstance()");
     }
 
-    watch([url, keepGenerationInfo, useTagautocomplete, theme, historyWidth, fontSize, maxSteps, maxCfg ], ([newUrl, newKeepGenerationInfo, newTagautocomplete, newTheme, newHistoryWidth, newFontSize, newMaxSteps, newMaxCfg]) => {      
-      fontSize.value = Math.max(10, Math.min(30, newFontSize));
-      maxSteps.value = newMaxSteps == "" ? newMaxSteps : Math.max(1, Math.min(120, newMaxSteps));
-      maxCfg.value =  newMaxCfg == "" ? newMaxCfg : Math.max(1, Math.min(50, newMaxCfg));
+    if (localStorage.getItem("chibi.settings")) {
+      localStorage.getItem("chibi.settings").split(',').forEach((v, i) => {
+        if (v != null && v != 'null' && v != '[object Object]') {
+          settingsArray[i].value = v;
+        }
+      });
+    }
 
-      if (!newKeepGenerationInfo) {
+    watch([url, keepGenerationInfo, useTagautocomplete, theme, historyWidth, fontSize, maxSteps, maxCfg, imageFormat, imageQuality], () => {
+      fontSize.value = Math.max(10, Math.min(30, fontSize.value));
+      maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
+      maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
+    
+      if (!keepGenerationInfo.value) {
         localStorage.removeItem("chibi.generationInfo");
       }
-      document.documentElement.style.fontSize = `${newFontSize}px`;
-
-      localStorage.setItem("chibi.settings", [ url.value, keepGenerationInfo.value, useTagautocomplete.value, theme.value, historyWidth.value, fontSize.value, maxSteps.value, maxCfg.value ]);
+      document.documentElement.style.fontSize = `${fontSize.value}px`;
+    
+      localStorage.setItem("chibi.settings", settingsArray.map(r => r.value));
     });
 
-    if (localStorage.getItem("chibi.settings")) {
-      [ url.value, keepGenerationInfo.value, useTagautocomplete.value, theme.value, historyWidth.value, fontSize.value, maxSteps.value, maxCfg.value ] = localStorage.getItem("chibi.settings").split(',');
-    }
+    console.log(settingsArray, url);
   }
   static getInstance() {
-    if(!instance) {
+    if (!instance) {
       instance = new DataManager(token);
     }
     return instance;
@@ -67,6 +88,8 @@ export default class DataManager {
   get maxSteps() { return maxSteps; }
   get maxCfg() { return maxCfg; }
 
+  get imageFormat() { return imageFormat };
+  get imageQuality() { return imageQuality; }
   get keepGenerationInfo() { return keepGenerationInfo; }
   get useTagautocomplete() { return useTagautocomplete; }
 
@@ -86,7 +109,7 @@ export default class DataManager {
 
   getThemeList() {
     // yeah, it's hard-coded.
-    return [ 'radio-black', 'radio-white', 'novellus' ];
+    return ['radio-black', 'radio-white', 'novellus'];
   }
 
   resetSettings() {
@@ -108,7 +131,7 @@ export default class DataManager {
   }
 
   saveHistory(imageUrls) {
-    if(imageUrls != null) {
+    if (imageUrls != null) {
       localStorage.setItem("chibi.history", imageUrls);
     }
   }
