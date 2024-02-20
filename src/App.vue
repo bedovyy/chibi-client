@@ -152,7 +152,7 @@ function toogleSettings(e) {
   <div class="sidebar-wrapper">
     <div ref="sidebarEl" class="sidebar shirink">
       <div class="history">
-        <img v-for="img in history" :class="{ selected: currentImage === img }" loading="lazy" :src="img" @click="onClickHistory(img)">
+        <img v-for="img in history" :class="{ selected: currentImage === img }" v-lazy="img" @click="onClickHistory(img)">
         <!-- History -->
       </div>
     </div>
