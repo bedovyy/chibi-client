@@ -38,9 +38,9 @@ watch(theme, (newVal) => {
 });
 document.querySelector(":root").classList.add(theme.value);
 
+connectServer();
 onMounted(() => {
   // move this to DataManager... which is data manager no more.
-  connectServer();
   history.value = DataManager.getInstance().loadHistory();
 });
 
@@ -67,16 +67,16 @@ async function connectServer() {
 
   // try http first
   const testUrl = `${window.location.protocol}//${urlForTest}`;
-  if (await WebUIController.checkUrl(testUrl)) {
-    console.log("use webui-controller");
-    controller.value = new WebUIController(testUrl, onGenerated);
-  } else if (await ComfyUIController.checkUrl(testUrl)) {
+  if (await ComfyUIController.checkUrl(testUrl)) {
     console.log("use comfyui-controller");
     const ctrl = new ComfyUIController(testUrl, onGenerated);
     await ctrl.prepare();
     //TODO: generator calc some values like samplers and schedulers when it receive controller,
     //      so, controller should be sent after preparation. this logic should be changed.
     controller.value = ctrl;
+  } else if (await WebUIController.checkUrl(testUrl)) {
+    console.log("use webui-controller");
+    controller.value = new WebUIController(testUrl, onGenerated);
   }
 }
 

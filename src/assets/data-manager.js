@@ -33,6 +33,19 @@ const settingsArray = [
   imageQuality
 ];
 
+watch([url, keepGenerationInfo, useTagautocomplete, theme, historyWidth, fontSize, maxSteps, maxCfg, imageFormat, imageQuality], () => {
+  fontSize.value = Math.max(10, Math.min(30, fontSize.value));
+  maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
+  maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
+
+  if (!keepGenerationInfo.value) {
+    localStorage.removeItem("chibi.generationInfo");
+  }
+  document.documentElement.style.fontSize = `${fontSize.value}px`;
+
+  localStorage.setItem("chibi.settings", settingsArray.map(r => r.value));
+});
+
 // api controller
 const controller = ref(null);
 const message = ref("");
@@ -57,21 +70,6 @@ export default class DataManager {
         }
       });
     }
-
-    watch([url, keepGenerationInfo, useTagautocomplete, theme, historyWidth, fontSize, maxSteps, maxCfg, imageFormat, imageQuality], () => {
-      fontSize.value = Math.max(10, Math.min(30, fontSize.value));
-      maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
-      maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
-
-      if (!keepGenerationInfo.value) {
-        localStorage.removeItem("chibi.generationInfo");
-      }
-      document.documentElement.style.fontSize = `${fontSize.value}px`;
-
-      localStorage.setItem("chibi.settings", settingsArray.map(r => r.value));
-    });
-
-    console.log(settingsArray, url);
   }
   static getInstance() {
     if (!instance) {

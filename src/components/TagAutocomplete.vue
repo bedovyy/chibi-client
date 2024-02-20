@@ -17,8 +17,9 @@ let itemSelected = ref(-1);
 let wordForAutocomplete = null;
 let speciallyHide = ref(false);
 
-watch(modelValue, () => nextTick(() => resizeTextArea()));
-const resizeObserver = new ResizeObserver(entries => entries.forEach(() => nextTick(() => resizeTextArea())));
+watch(modelValue, () => () => resizeTextArea());
+watch(DataManager.getInstance().fontSize, () => resizeTextArea());
+const resizeObserver = new ResizeObserver(entries => entries.forEach(() => () => resizeTextArea()));
 
 onMounted(() => {
   resizeObserver.observe(textareaEl.value);
@@ -47,10 +48,12 @@ function clearAutocomplete(e) {
 }
 
 function resizeTextArea() {
-  if (textareaEl.value) {
-    textareaEl.value.style.height = "auto";
-    textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
-  }
+  nextTick(() => {
+    if (textareaEl.value) {
+      textareaEl.value.style.height = "auto";
+      textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;    
+    }
+  });
 }
 
 async function fullSearch(word) {
@@ -137,6 +140,9 @@ function navigateAutocomplete(e) {
       e.preventDefault();
       break;
     case "ArrowUp":
+      if (itemSelected.value < 0) {
+        return;
+      }
       itemSelected.value = Math.min(filteredTagList.value.length - 1, Math.max(0, itemSelected.value - 1));
       e.preventDefault();
       break;
