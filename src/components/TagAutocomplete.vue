@@ -17,7 +17,7 @@ let itemSelected = ref(-1);
 let wordForAutocomplete = null;
 let speciallyHide = ref(false);
 
-watch(modelValue, () => () => resizeTextArea());
+watch(modelValue, () => resizeTextArea());
 watch(DataManager.getInstance().fontSize, () => resizeTextArea());
 const resizeObserver = new ResizeObserver(entries => entries.forEach(() => () => resizeTextArea()));
 
@@ -51,7 +51,7 @@ function resizeTextArea() {
   nextTick(() => {
     if (textareaEl.value) {
       textareaEl.value.style.height = "auto";
-      textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;    
+      textareaEl.value.style.height = `${textareaEl.value.scrollHeight + (textareaEl.value.offsetHeight - textareaEl.value.clientHeight)}px`;
     }
   });
 }
