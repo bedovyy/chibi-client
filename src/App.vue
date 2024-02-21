@@ -140,7 +140,8 @@ function toogleSettings(e) {
   <main>
     <div ref="generatorEl" class="generator">
       <div class="generator-slider" @click="toggleGenerator" @touchmove="slideGenerator" @touchend="slideGenerator">
-        <span>|||</span></div>
+        <span>|||</span>
+      </div>
       <Generator class="generator-component" />
     </div>
     <div class="preview" :class="{ generating: isGenerating }" @click="hideSidebar()">
@@ -241,7 +242,7 @@ main {
 
 .preview {
   flex: 1;
-  padding: 2rem;
+  padding: 2%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -406,4 +407,5 @@ main {
 }
 
 /* @media (max-width:480px) {
-} */</style>
+} */
+</style>

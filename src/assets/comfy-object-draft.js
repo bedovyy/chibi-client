@@ -30,7 +30,7 @@ export function generateComfyObjects(jsonObject) {
       });
     });
   });
-  console.log("type created");
+  // console.log("type created");
 
   // making nodes
   let node = {};
@@ -153,8 +153,7 @@ export function generateComfyObjects(jsonObject) {
     }
     Object.defineProperty(node[nodeName], 'name', { value: nodeName });
   });
-
-  console.log("created node");
+  // console.log("node created");
 
   return [node, type, arrayType];
 }

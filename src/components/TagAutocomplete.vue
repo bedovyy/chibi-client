@@ -233,7 +233,7 @@ function selectAutoComplete(index) {
 
       &.selected,
       &:hover {
-        background-color: var(--color-background-mute);
+        background-color: var(--color-border);
       }
 
       >div.tag-item {
