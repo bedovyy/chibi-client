@@ -13,6 +13,31 @@ const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiec
 const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
 const width = defineModel('width', { default: 832 });
 const height = defineModel('height', { default: 1216 });
+const sizePreset = computed({
+  get() {
+    const size = width.value + '✕' + height.value + ' ';
+    const sizePreset = sizePresetList.value.find(v => v.includes(size));
+    return sizePreset ? sizePreset : "custom";
+  },
+  set(v) {
+    const [w, h] = v.split(/[✕ ]/);
+    if (w != 'custom') {
+      width.value = w;
+      height.value = h;
+    }
+  }
+});
+
+const sizePresetList = ref(getSizePresetList());
+watch(DataManager.getInstance().sizePresetBase, () => sizePresetList.value = getSizePresetList());
+function getSizePresetList() {
+  const sizePresetLists = {
+    "SD": ['960✕384 (21:9) SD', '832✕448 (16:9) SD', '768✕512 (3:2) SD', '768✕576 (4:3) SD', '640✕640 (1:1) SD', '512✕768 (2:3) SD', '448✕832 (9:16) SD'],
+    "SDXL": ['1536✕640 (21:9) SDXL', '1344✕768 (16:9) SDXL', '1216✕832 (3:2) SDXL', '1152✕896 (4:3) SDXL', '1024✕1024 (1:1) SDXL', '832✕1216 (2:3) SDXL', '768✕1344 (9:16) SDXL'],
+  }
+  return sizePresetLists[DataManager.getInstance().sizePresetBase.value] || [...sizePresetLists.SD, ...sizePresetLists.SDXL, 'custom'];
+}
+
 const steps = defineModel('steps', { default: 28 })
 const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
 const seed = defineModel('seed', { default: -1 });
@@ -37,7 +62,7 @@ let ckptList = null;
 let vaeList = null;
 let samplerList = null;
 let schedulerList = null;
-watch(controller, async (newVal, oldVal) => {
+watch(controller, async (newVal) => {
   if (DataManager.getInstance().keepGenerationInfo.value) {
     const info = DataManager.getInstance().loadGenerationInfo();
     if (info) {
@@ -125,10 +150,13 @@ async function generate() {
       <!-- <textarea id="negative-prompt" rows="3" v-model="negative_prompt"></textarea> -->
       <label for="image-size">Image size</label>
       <div class="row">
-        <div class="size">
-          <input v-model="width">
-          <div>✕</div>
-          <input v-model="height">
+        <Dropdown style="max-width: 40%;" v-model="sizePreset" v-model:datalist="sizePresetList"></Dropdown>
+        <div class="row">
+          <div class="size">
+            <input maxlength="4" v-model="width">
+            <div>✕</div>
+            <input maxlength="4" v-model="height">
+          </div>
         </div>
       </div>
       <div class="row"><label for="steps">Steps: </label><input style="width:4rem" v-model="steps"></div>

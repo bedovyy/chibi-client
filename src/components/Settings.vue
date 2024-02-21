@@ -20,6 +20,8 @@ const themeList = DataManager.getInstance().getThemeList();
 const imageFormat = DataManager.getInstance().imageFormat;
 const imageFormatList = ["webp", "png"];
 const imageQuality = DataManager.getInstance().imageQuality;
+const sizePresetBase = DataManager.getInstance().sizePresetBase;
+const sizePresetBaseList = ["All", "SD", "SDXL"];
 
 const resetButtonEl = ref(null);
 const clearHistoryButtonEl = ref(null);
@@ -91,12 +93,16 @@ function skipReset() {
           v-model="imageQuality">
       </div>
       <div class="row">
-        <label for="keep-generator-info">Keep generator infomation</label>
+        <label for="keep-generator-info">Keep generator information</label>
         <Dropdown id="keep-generator-info" v-model="keepGenerationInfo" v-model:datalist="trueOrFalse"></Dropdown>
       </div>
       <div class="row">
         <label for="enable-danbooru-tags">Enable danbooru tag autocomplete</label>
         <Dropdown id="enable-danbooru-tags" v-model="useTagautocomplete" v-model:datalist="trueOrFalse"></Dropdown>
+      </div>
+      <div class="row">
+        <label for="size-preset-base">Image size presets for </label>
+        <Dropdown id="size-preset-base" v-model="sizePresetBase" v-model:datalist="sizePresetBaseList"></Dropdown>
       </div>
       <div class="row">
         <label for="max-steps">Maximum steps</label>
@@ -246,4 +252,5 @@ function skipReset() {
       background: orange;
     }
   }
-}</style>
+}
+</style>

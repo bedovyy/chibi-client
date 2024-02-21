@@ -8,7 +8,6 @@ const token = "This is token for keeping singleton";
 let instance = null;
 
 // settings
-console.log(window.location.href);
 const url = ref(window.location.href.replace(/\/chibi\/[^\/]*$/, ''));
 const keepGenerationInfo = ref(true);
 const useTagautocomplete = ref(true);
@@ -19,6 +18,7 @@ const maxSteps = ref(60);
 const maxCfg = ref(20);
 const imageFormat = ref("webp");  // webp, png
 const imageQuality = ref(70);
+const sizePresetBase = ref("All");
 
 const settingsArray = [
   url,
@@ -30,10 +30,11 @@ const settingsArray = [
   maxSteps,
   maxCfg,
   imageFormat,
-  imageQuality
+  imageQuality,
+  sizePresetBase
 ];
 
-watch([url, keepGenerationInfo, useTagautocomplete, theme, historyWidth, fontSize, maxSteps, maxCfg, imageFormat, imageQuality], () => {
+watch(settingsArray, () => {
   fontSize.value = Math.max(10, Math.min(30, fontSize.value));
   maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
   maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
@@ -90,6 +91,7 @@ export default class DataManager {
   get imageQuality() { return imageQuality; }
   get keepGenerationInfo() { return keepGenerationInfo; }
   get useTagautocomplete() { return useTagautocomplete; }
+  get sizePresetBase() { return sizePresetBase; }
 
   get controller() { return controller; }
   get message() { return message; }
