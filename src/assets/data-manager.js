@@ -38,12 +38,10 @@ watch(settingsArray, () => {
   fontSize.value = Math.max(10, Math.min(30, fontSize.value));
   maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
   maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
-
   if (!keepGenerationInfo.value) {
     localStorage.removeItem("chibi.generationInfo");
   }
   document.documentElement.style.fontSize = `${fontSize.value}px`;
-
   localStorage.setItem("chibi.settings", settingsArray.map(r => r.value));
 });
 
@@ -57,6 +55,9 @@ const taglist = ref();
 const extraTaglist = ref();
 fetch(taglistCSV).then(res => res.text()).then(text => { taglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
 fetch(extraCSV).then(res => res.text()).then(text => { extraTaglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
+
+// import info
+const importedInfo = ref();
 
 export default class DataManager {
   constructor(_token) {
@@ -100,6 +101,8 @@ export default class DataManager {
   get taglist() { return taglist; }
   get extraTaglist() { return extraTaglist; }
 
+  get importedInfo() { return importedInfo; }
+
   isExtension() {
     return controller.value != null && url.value.includes(window.location.host);
   }
@@ -130,9 +133,9 @@ export default class DataManager {
     return JSON.parse(infoFromStorage);
   }
 
-  saveHistory(imageUrls) {
-    if (imageUrls != null) {
-      localStorage.setItem("chibi.history", imageUrls);
+  saveHistory(history) {
+    if (history != null) {
+      localStorage.setItem("chibi.history", JSON.stringify(history));
     }
   }
   loadHistory() {
@@ -140,7 +143,12 @@ export default class DataManager {
     if (!historyFromStorage || historyFromStorage == "null") {
       return [];
     }
-    return historyFromStorage.split(',');
+    try {
+      return JSON.parse(historyFromStorage);
+    } catch (e) {
+      console.log(e);
+      return historyFromStorage.split(',').map(url => ({ url, info: null }));
+    }
   }
   clearHistory() {
     localStorage.removeItem("chibi.history");

@@ -14,8 +14,10 @@ import DataManager from '@/assets/data-manager';
 const generatorEl = ref();
 const sidebarEl = ref();
 const settingsEl = ref();
+const infoEl = ref();
 
 const currentImage = ref(logo);
+const currentInfo = ref();
 const history = ref([]);
 
 const controller = DataManager.getInstance().controller;
@@ -25,7 +27,7 @@ const message = DataManager.getInstance().message;
 const url = DataManager.getInstance().url;
 const theme = DataManager.getInstance().theme;
 const historyWidthPx = computed(() => DataManager.getInstance().historyWidth.value + 'px');
-
+const progress = computed(() => (Number.isInteger(message.value?.data?.max)) ? Math.floor(Number(message.value?.data?.value) / Number(message.value?.data?.max) * 100) + "%": "0%");
 watch(theme, (newVal) => {
   const list = DataManager.getInstance().getThemeList();
   list.forEach(c => {
@@ -47,18 +49,28 @@ onMounted(() => {
 watch(isGenerating, (newVal, oldVal) => {
   if (newVal && !oldVal) {
     generatorEl.value.classList.add('shirink');
+    infoEl.value?.classList.add('shirink');
     currentImage.value = logo;
   }
 });
 
-function onGenerated(blob) {
-  currentImage.value = blob;
-  history.value.push(blob);
+function onGenerated(url, info) {
+  currentImage.value = url;
+  currentInfo.value = info;
+  history.value.push({ url, info });
   DataManager.getInstance().saveHistory(history.value);
 }
 
 function onClickHistory(src) {
-  currentImage.value = src;
+  currentImage.value = (src.url || src);
+  currentInfo.value = src.info;
+}
+
+function sendInfo() {
+  if (currentInfo.value) {
+    DataManager.getInstance().importedInfo.value = currentInfo.value;
+    generatorEl.value.classList.remove("shirink");
+  }
 }
 
 async function connectServer() {
@@ -111,8 +123,12 @@ function slideGenerator(e) {
 }
 
 //TODO: two methods for controlling one element?
-function hideSidebar() {
-  sidebarEl.value.classList.add('shirink');
+function onClickPreview() {
+  if (sidebarEl.value.classList.contains('shirink')) {
+    infoEl.value?.classList.toggle('shirink');
+  } else {
+    sidebarEl.value.classList.add('shirink');
+  }
 }
 function toggleSidebar() {
   sidebarEl.value.classList.toggle('shirink');
@@ -144,13 +160,25 @@ function toogleSettings(e) {
       </div>
       <Generator class="generator-component" />
     </div>
-    <div class="preview" :class="{ generating: isGenerating }" @click="hideSidebar()">
+    <div class="preview" :class="{ generating: isGenerating }" @click="onClickPreview">
       <img alt="Preview" class="preview-image" :src="currentImage" @error="noImg" />
+      <div ref="infoEl" v-if="currentInfo" class="info shirink">
+        <div class="option-buttons">
+          <!-- <div class="option-button">✨<br>Enhance</div> -->
+          <div class="option-button" @click="sendInfo">↩️<br>Import</div>
+        </div>
+        <div class="infotext">
+          <strong>{{ currentInfo.prompt }}</strong><br>
+          <em>{{ currentInfo.negative_prompt }}</em><br><br>
+          <span class="box">📐{{ currentInfo.width }}✕{{ currentInfo.height }}</span><span class="box">🌱{{ currentInfo.seed }}</span><br>
+          <span class="box">💿{{ currentInfo.checkpoint.replace(/^.*\/|\.[^.]*$/g, "") }}</span>
+        </div>
+      </div>
     </div>
-    <div class="sidebar-wrapper">
-      <div ref="sidebarEl" class="sidebar shirink">
+    <div ref="sidebarEl" class="sidebar-wrapper shirink">
+      <div class="sidebar">
         <div class="history">
-          <img v-for="img in history" :class="{ selected: currentImage === img }" v-lazy="img"
+          <img v-for="img in history" :class="{ selected: currentImage === (img.url || img) }" v-lazy="(img.url || img)"
             @click="onClickHistory(img)">
           <!-- History -->
         </div>
@@ -160,8 +188,9 @@ function toogleSettings(e) {
   <div ref="settingsEl" class="modal shirink" @mousedown="toogleSettings">
     <Settings></Settings>
   </div>
-  <div class="toaster" :class="{ shirink: !isGenerating }">
-    {{ message }}
+  <div v-if="message" class="toaster" :class="{ shirink: !isGenerating }">
+    {{ message.type.toUpperCase() + (message.data.node ? `: ${message.data.node.split('-')[0]}` : "") + (message.type ==
+      "progress" ? ` ${message.data.value} / ${message.data.max}` : "") }}
   </div>
 </template>
 
@@ -228,6 +257,7 @@ main {
   .generator-slider {
     display: none;
     text-align: center;
+    font-size: 16px;
     padding: 0;
     background: var(--color-background-soft);
     width: 100%;
@@ -241,6 +271,7 @@ main {
 }
 
 .preview {
+  position: relative;
   flex: 1;
   padding: 2%;
   display: flex;
@@ -260,25 +291,70 @@ main {
   @keyframes generating {
     0% {
       box-shadow:
-        0px 0px 0px 100px #181818 inset,
-        0px 0px 0px 102px #FFFFFF00 inset;
+        0px 0px 0px 100px var(--color-background-soft) inset,
+        0px 0px 0px 102px var(--color-border) inset;
     }
 
     50% {
       box-shadow:
-        0px 0px 0px -2px #181818 inset,
-        0px 0px 0px 0px #FFFFFF40 inset;
+        0px 0px 0px -2px var(--color-background-soft) inset,
+        0px 0px 0px 0px var(--color-border) inset;
     }
 
     100% {
       box-shadow:
-        0px 0px 0px -2px #181818 inset,
-        0px 0px 0px 0px #FFFFFF40 inset;
+        0px 0px 0px -2px var(--color-background-soft) inset,
+        0px 0px 0px 0px var(--color-border) inset;
     }
   }
 }
 
-//TODO: too many hard-coded values...
+.info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 35%;
+  background-color: var(--color-background-soft);
+  opacity: 0.85;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1rem;
+
+  &.shirink {
+    display: none;
+  }
+
+  .option-buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    .option-button {
+      margin: 2px;
+      padding: 4px;
+      cursor: pointer;
+      line-height: 1rem;
+    }
+  }
+
+  .infotext {
+    font-size: 0.8rem;
+    max-height: 100%;
+    overflow: auto;
+    line-height: normal;
+
+    .box {
+      display: inline-block;
+      border: 1px solid var(--color-text-secondary);
+      margin: 1px;
+      padding: 0px 2px 1px;
+    }
+  }
+}
+
 .sidebar {
   min-width: v-bind(historyWidthPx);
   width: v-bind(historyWidthPx);
@@ -333,12 +409,16 @@ main {
   position: fixed;
   bottom: 10%;
   left: 10%;
+  right: 10%;
   width: 80%;
   padding: 10px 2%;
   color: white;
+  margin: 0 auto;
+  max-width: 640px;
   font-size: 0.8rem;
   text-align: center;
-  background-color: #000a;
+  background: #000a;
+  background: linear-gradient(to right, #777e, #777e v-bind(progress), #000a v-bind(progress), #000a 100%);
   border-radius: 20px;
   transition: opacity 1s, visibility 1s;
   z-index: 6;
@@ -359,15 +439,13 @@ main {
     top: 30px;
     bottom: 0;
     right: 0;
+    width: v-bind(historyWidthPx);
     height: calc(100% - 30px);
     overflow: hidden;
-  }
-
-  .sidebar {
-    transition: transform 0.2s;
+    transition: width 0.2s;
 
     &.shirink {
-      transform: translateX(100%);
+      width: 0px;
     }
   }
 }
@@ -399,6 +477,7 @@ main {
 
   .preview {
     min-width: 100%;
+    height: calc(100% - 80px); //TODO: no hard-coding!
   }
 
   .sidebar-wrapper {

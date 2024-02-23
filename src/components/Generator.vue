@@ -13,6 +13,12 @@ const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiec
 const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
 const width = defineModel('width', { default: 832 });
 const height = defineModel('height', { default: 1216 });
+const steps = defineModel('steps', { default: 28 })
+const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
+const seed = defineModel('seed', { default: -1 });
+const sampler_index = defineModel('sampler_index', { default: null });
+const scheduler = defineModel('scheduler', { default: null });
+
 const sizePreset = computed({
   get() {
     const size = width.value + '✕' + height.value + ' ';
@@ -27,7 +33,6 @@ const sizePreset = computed({
     }
   }
 });
-
 const sizePresetList = ref(getSizePresetList());
 watch(DataManager.getInstance().sizePresetBase, () => sizePresetList.value = getSizePresetList());
 function getSizePresetList() {
@@ -37,12 +42,6 @@ function getSizePresetList() {
   }
   return sizePresetLists[DataManager.getInstance().sizePresetBase.value] || [...sizePresetLists.SD, ...sizePresetLists.SDXL, 'custom'];
 }
-
-const steps = defineModel('steps', { default: 28 })
-const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
-const seed = defineModel('seed', { default: -1 });
-const sampler_index = defineModel('sampler_index', { default: null });
-const scheduler = defineModel('scheduler', { default: null });
 
 const maxSteps = DataManager.getInstance().maxSteps;
 const maxCfg = DataManager.getInstance().maxCfg;
@@ -79,6 +78,23 @@ watch(controller, async (newVal) => {
       scheduler.value = info.scheduler;
     }
   }
+
+  watch(DataManager.getInstance().importedInfo, info => {
+    if (info) {
+      checkpoint.value = info.checkpoint;
+      vae.value = info.vae;
+      prompt.value = info.prompt;
+      negative_prompt.value = info.negative_prompt;
+      width.value = info.width;
+      height.value = info.height;
+      steps.value = info.steps;
+      cfg_scale.value = info.cfg_scale;
+      seed.value = info.seed; // do i need?
+      sampler_index.value = info.sampler_index;
+      scheduler.value = info.scheduler;
+    }
+    DataManager.getInstance().importedInfo.value = null;
+  });
 
   // set first if not in list
   ckptList = newVal.getCheckpoints();
@@ -150,7 +166,7 @@ async function generate() {
       <!-- <textarea id="negative-prompt" rows="3" v-model="negative_prompt"></textarea> -->
       <label for="image-size">Image size</label>
       <div class="row">
-        <Dropdown style="max-width: 40%;" v-model="sizePreset" v-model:datalist="sizePresetList"></Dropdown>
+        <Dropdown style="max-width: 45%;" v-model="sizePreset" v-model:datalist="sizePresetList"></Dropdown>
         <div class="row">
           <div class="size">
             <input maxlength="4" v-model="width">

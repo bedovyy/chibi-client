@@ -21,6 +21,7 @@ export default class ComfyUIController extends AController {
 
   // prompt_id
   prompt_id = null;
+  generationInfo = null; //TODO: use workflow later
 
   static async checkUrl(url) {
     try {
@@ -44,9 +45,10 @@ export default class ComfyUIController extends AController {
     if (outputs) {
       Object.values(outputs).forEach(outputNodes => {
         Object.values(outputNodes.images).forEach(async imageInfo => {
-          this.listener(`${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`);
-          dataManager.isGenerating.value = false;
+          this.listener(`${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`, this.generationInfo);
+          this.generationInfo = null;
           this.prompt_id = null;
+          dataManager.isGenerating.value = false;
         });
       });
     }
@@ -55,7 +57,7 @@ export default class ComfyUIController extends AController {
   async messageListener(e) {
     console.log(Date() + " ws : message", e);
     const json = JSON.parse(e.data);
-    dataManager.message.value = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
+    dataManager.message.value = json;
 
     // clumsy ws hanging solution.
     if (this.timeoutWS) {
@@ -168,6 +170,8 @@ export default class ComfyUIController extends AController {
     dataManager.isGenerating.value = true;
     const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: target.toWorkflow(), client_id: this.clientId }));
     this.prompt_id = res.data.prompt_id;
+    this.generationInfo = info;
+    this.generationInfo.seed = actualSeed;  // change -1 to actual seed
 
     // just in case ws hangs.
     this.timeoutWS = setTimeout(() => this.createWebSocket(), 1000);
