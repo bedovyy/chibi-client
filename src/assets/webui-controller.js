@@ -36,7 +36,6 @@ export default class WebUIController extends AController {
   }
 
   async prepare() {
-    console.log(this);
     this.checkpoints = (await axios.get(`${this.url}/sdapi/v1/sd-models`)).data.filter(v => v != "").map(v => v.title.replace(/\[[^\]]*\]$/, "").trim());
     this.vaes = (await axios.get(`${this.url}/sdapi/v1/sd-vae`)).data.map(v => v.model_name);
     this.samplers = (await axios.get(`${this.url}/sdapi/v1/samplers`)).data.map(v => v.name);
@@ -62,15 +61,12 @@ export default class WebUIController extends AController {
     delete params.vae;
     params.save_images = true;
 
-    // change checkpoint and vae model.
-    this.listener("running", "LOADING MODELS");
-    // it seems changing checkpoint and vae together make problem.
-    await axios.post(`${this.url}/sdapi/v1/options`, { sd_model_checkpoint: info.checkpoint });
-    await axios.post(`${this.url}/sdapi/v1/options`, { sd_vae: info.vae || "None" });
-
-
-    this.checkProgress(true);
     try {
+      // change checkpoint and vae model.
+      this.listener("running", "LOADING MODELS");
+      await axios.post(`${this.url}/sdapi/v1/options`, { sd_model_checkpoint: info.checkpoint, sd_vae: info.vae || "None" });
+
+      this.checkProgress(true);
       const res = await axios.post(`${this.url}/sdapi/v1/txt2img`, params);
       clearTimeout(this.timeout);
       this.timeout = null;
