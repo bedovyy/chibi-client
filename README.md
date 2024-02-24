@@ -11,8 +11,9 @@ Chibi, also known as super deformation, or S.D. is a style of caricature origina
 - open `<comfyui_url>/chibi`. It is normally `http://localhost:8188/chibi`
 
 ### Installing as Stable Diffusion web UI extension
-- go to `Extensions > Install from URL` and input `https://github.com/bedovyy/chibi-client`, then restart UI.
-- open `<webui_url>/chibi`. It is normally `http://localhost:7860/chibi`
+- go to `Extensions > Install from URL` and input `https://github.com/bedovyy/chibi-client`.
+- run web UI with `--api` option.
+- open `<webui_url>/chibi`. It is normally `http://localhost:7860/chibi`.
 
 ### Using as standalone
 - cloning this repo, then run `npm run dev` or serve with any web server.
