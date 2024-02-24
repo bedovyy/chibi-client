@@ -14,7 +14,7 @@ export function generateComfyObjects(jsonObject) {
       Object.keys(input).forEach(inputName => {
         const inputType = input[inputName];
         if (!Array.isArray(inputType)) {
-          console.err(`inputType ${inputType} for ${nodeName} is not array`);
+          console.error(`inputType ${inputType} for ${nodeName} is not array`);
         }
         const specialType = ["*", "INT", "FLOAT", "STRING"];
         const cand = inputType[0];
