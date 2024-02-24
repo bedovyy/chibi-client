@@ -1,6 +1,6 @@
 # Chibi client
 
-A Simple txt2img client for comfyui developed in Vue3.
+A Simple txt2img client for ComfyUI and Stable Diffusion web UI, developed in Vue3.
 
 Chibi, also known as super deformation, or S.D. is a style of caricature originating in Japan, and common in anime and manga[^1]
 
@@ -9,6 +9,10 @@ Chibi, also known as super deformation, or S.D. is a style of caricature origina
 ### Installing as ComfyUI extension
 - `git clone https://github.com/bedovyy/chibi-client` into the `custom_nodes` directory.
 - open `<comfyui_url>/chibi`. It is normally `http://localhost:8188/chibi`
+
+### Installing as Stable Diffusion web UI extension
+- go to `Extensions > Install from URL` and input `https://github.com/bedovyy/chibi-client`, then restart UI.
+- open `<webui_url>/chibi`. It is normally `http://localhost:7860/chibi`
 
 ### Using as standalone
 - cloning this repo, then run `npm run dev` or serve with any web server.
