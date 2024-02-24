@@ -18,7 +18,7 @@ let wordForAutocomplete = null;
 let speciallyHide = ref(false);
 
 watch(modelValue, () => resizeTextArea());
-watch(DataManager.getInstance().fontSize, () => resizeTextArea());
+watch(DataManager.getInstance().fontSize, () => resizeTextArea(), { immediate: true });
 const resizeObserver = new ResizeObserver(entries => entries.forEach(() => () => resizeTextArea()));
 
 onMounted(() => {

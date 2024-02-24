@@ -82,7 +82,7 @@ function skipReset() {
     </div>
 
     <div class="section">
-      <h1>Generator</h1>
+      <h1>Saving image <sup v-if="DataManager.getInstance().backendName.value == 'web UI'" class="note">*WebUI's setting will be changed</sup></h1>
       <div class="row">
         <label for="imageFormat">File format for images</label>
         <Dropdown id="imageFormat" v-model="imageFormat" v-model:datalist="imageFormatList"></Dropdown>
@@ -92,6 +92,7 @@ function skipReset() {
         <input id="imageQuality" type="range" min="50" max="100" step="10" :disabled="imageFormat == 'png'"
           v-model="imageQuality">
       </div>
+      <h1>Generator</h1>
       <div class="row">
         <label for="keep-generator-info">Keep generator information</label>
         <Dropdown id="keep-generator-info" v-model="keepGenerationInfo" v-model:datalist="trueOrFalse"></Dropdown>

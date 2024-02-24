@@ -10,6 +10,7 @@ import logo from '@/assets/logo.svg';
 import ComfyUIController from '@/assets/comfyui-controller';
 import WebUIController from '@/assets/webui-controller';
 import DataManager from '@/assets/data-manager';
+const dataManager = DataManager.getInstance();
 
 const generatorEl = ref();
 const sidebarEl = ref();
@@ -20,16 +21,16 @@ const currentImage = ref(logo);
 const currentInfo = ref();
 const history = ref([]);
 
-const controller = DataManager.getInstance().controller;
-const isGenerating = DataManager.getInstance().isGenerating;
+const controller = dataManager.controller;
+const isGenerating = dataManager.isGenerating;
 
-const message = DataManager.getInstance().message;
-const url = DataManager.getInstance().url;
-const theme = DataManager.getInstance().theme;
-const historyWidthPx = computed(() => DataManager.getInstance().historyWidth.value + 'px');
-const progress = computed(() => (Number.isInteger(message.value?.data?.max)) ? Math.floor(Number(message.value?.data?.value) / Number(message.value?.data?.max) * 100) + "%": "0%");
+const url = dataManager.url;
+const theme = dataManager.theme;
+const historyWidthPx = computed(() => dataManager.historyWidth.value + 'px');
+const message = ref("");
+const progress = ref(0);
 watch(theme, (newVal) => {
-  const list = DataManager.getInstance().getThemeList();
+  const list = dataManager.getThemeList();
   list.forEach(c => {
     if (c == newVal) {
       document.querySelector(":root").classList.add(c);
@@ -43,7 +44,7 @@ document.querySelector(":root").classList.add(theme.value);
 connectServer();
 onMounted(() => {
   // move this to DataManager... which is data manager no more.
-  history.value = DataManager.getInstance().loadHistory();
+  history.value = dataManager.loadHistory();
 });
 
 watch(isGenerating, (newVal, oldVal) => {
@@ -54,11 +55,27 @@ watch(isGenerating, (newVal, oldVal) => {
   }
 });
 
-function onGenerated(url, info) {
-  currentImage.value = url;
-  currentInfo.value = info;
-  history.value.push({ url, info });
-  DataManager.getInstance().saveHistory(history.value);
+async function base64ToBlobURL(base64) {
+  return await fetch(base64).then(res => res.blob()).then(blob => URL.createObjectURL(blob));
+}
+
+function handleControllerEvent(state, data, extra) {
+  switch (state) {
+    case "running":
+      message.value = data;
+      progress.value = extra ? extra + "%" : "0%";
+      break;
+    case "done":
+      currentImage.value = data;
+      currentInfo.value = Object.assign(extra, { backend: dataManager.backendName.value });
+      history.value.push({ url: data, info: extra });
+      dataManager.saveHistory(history.value);
+      isGenerating.value = false;
+      break;
+    case "error":
+      isGenerating.value = false;
+      break;
+  }
 }
 
 function onClickHistory(src) {
@@ -68,7 +85,7 @@ function onClickHistory(src) {
 
 function sendInfo() {
   if (currentInfo.value) {
-    DataManager.getInstance().importedInfo.value = currentInfo.value;
+    dataManager.importedInfo.value = currentInfo.value;
     generatorEl.value.classList.remove("shirink");
   }
 }
@@ -80,16 +97,24 @@ async function connectServer() {
   // try http first
   const testUrl = `${window.location.protocol}//${urlForTest}`;
   if (await ComfyUIController.checkUrl(testUrl)) {
+    dataManager.backendName.value = "ComfyUI";
     console.log("use comfyui-controller");
-    const ctrl = new ComfyUIController(testUrl, onGenerated);
+    const ctrl = new ComfyUIController(testUrl, handleControllerEvent);
     await ctrl.prepare();
     //TODO: generator calc some values like samplers and schedulers when it receive controller,
     //      so, controller should be sent after preparation. this logic should be changed.
     controller.value = ctrl;
+    isGenerating.value = false;
   } else if (await WebUIController.checkUrl(testUrl)) {
     console.log("use webui-controller");
-    controller.value = new WebUIController(testUrl, onGenerated);
+    dataManager.backendName.value = "web UI";
+    const ctrl = new WebUIController(testUrl, handleControllerEvent);
+    await ctrl.prepare();
+    controller.value = ctrl;
+    [dataManager.imageFormat.value, dataManager.imageQuality.value] = ctrl.getImageFormat();
+    isGenerating.value = false;
   }
+  console.log(dataManager.backendName.value);
 }
 
 function noImg(e) {
@@ -148,6 +173,7 @@ function toogleSettings(e) {
     <div class="left">
       <h1 class="title">Chibi</h1>
       <img class="icon-settings icon" :src="iconSettings" @click="toogleSettings">
+      <!-- <sup>{{ dataManager.backendName.value }}</sup> -->
     </div>
     <div class="right">
       <img class="icon-history icon" :src="iconHistory" @click="toggleSidebar">
@@ -170,8 +196,11 @@ function toogleSettings(e) {
         <div class="infotext">
           <strong>{{ currentInfo.prompt }}</strong><br>
           <em>{{ currentInfo.negative_prompt }}</em><br><br>
-          <span class="box">📐{{ currentInfo.width }}✕{{ currentInfo.height }}</span><span class="box">🌱{{ currentInfo.seed }}</span><br>
+          <span class="box">📐{{ currentInfo.width }}✕{{ currentInfo.height }}</span>
+          <span class="box">🌱{{ currentInfo.seed }}</span>
+          <br>
           <span class="box">💿{{ currentInfo.checkpoint.replace(/^.*\/|\.[^.]*$/g, "") }}</span>
+          <span v-if="currentInfo.backend" class="box">🛠️{{ currentInfo.backend }}</span>
         </div>
       </div>
     </div>
@@ -189,8 +218,7 @@ function toogleSettings(e) {
     <Settings></Settings>
   </div>
   <div v-if="message" class="toaster" :class="{ shirink: !isGenerating }">
-    {{ message.type.toUpperCase() + (message.data.node ? `: ${message.data.node.split('-')[0]}` : "") + (message.type ==
-      "progress" ? ` ${message.data.value} / ${message.data.max}` : "") }}
+    {{ message }}
   </div>
 </template>
 
@@ -392,7 +420,7 @@ main {
   z-index: 5;
 
   >div {
-    margin: 10% auto;
+    margin: 10svh auto;
     width: 80%;
     max-width: 600px;
     max-height: 80%;

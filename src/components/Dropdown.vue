@@ -49,7 +49,7 @@ function hideList(e) {
   .dropdown-selected {
     display: flex;
     align-items: center;
-    // min-height: 35px; //TODO: no hardcoding!
+    min-height: calc(1.6rem + 7px);
     height: 100%;
 
     padding: 4px 26px 3px 10px;

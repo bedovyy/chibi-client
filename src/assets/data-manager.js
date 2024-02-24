@@ -34,20 +34,9 @@ const settingsArray = [
   sizePresetBase
 ];
 
-watch(settingsArray, () => {
-  fontSize.value = Math.max(10, Math.min(30, fontSize.value));
-  maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
-  maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
-  if (!keepGenerationInfo.value) {
-    localStorage.removeItem("chibi.generationInfo");
-  }
-  document.documentElement.style.fontSize = `${fontSize.value}px`;
-  localStorage.setItem("chibi.settings", settingsArray.map(r => r.value));
-});
-
 // api controller
+const backendName = ref("");
 const controller = ref(null);
-const message = ref("");
 const isGenerating = ref(false);
 
 // tagautocomplete
@@ -59,14 +48,43 @@ fetch(extraCSV).then(res => res.text()).then(text => { extraTaglist.value = pars
 // import info
 const importedInfo = ref();
 
+// from 24.02.24
+function migrationLocalStorage(subkey) {
+  const toMigration = ["chibi.settings", "chibi.generationInfo", "chibi.history"];
+  toMigration.forEach(key => {
+    if (localStorage.getItem(key)) {
+      localStorage.setItem(`${key}(${subkey})`, localStorage.getItem(key));
+      localStorage.removeItem(key);
+    }
+  });
+}
+
 export default class DataManager {
   constructor(_token) {
     if (token != _token) {
       throw new Error("Use DataManager.getInstance()");
     }
+    this.subkey = url.value;
+    this.SETTINGS = `chibi.settings(${this.subkey})`;
+    this.HISTORY = `chibi.history(${this.subkey})`;
+    this.GENERATION_INFO = `chibi.generationInfo(${this.subkey})`;
+    // migration local storage
+    migrationLocalStorage(this.subkey);
 
-    if (localStorage.getItem("chibi.settings")) {
-      localStorage.getItem("chibi.settings").split(',').forEach((v, i) => {
+    // moved here for using this.GENERATION_INFO
+    watch(settingsArray, () => {
+      fontSize.value = Math.max(10, Math.min(30, fontSize.value));
+      maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
+      maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
+      if (!keepGenerationInfo.value) {
+        localStorage.removeItem(this.GENERATION_INFO);
+      }
+      document.documentElement.style.fontSize = `${fontSize.value}px`;
+      localStorage.setItem(this.SETTINGS, settingsArray.map(r => r.value));
+    });
+
+    if (localStorage.getItem(this.SETTINGS)) {
+      localStorage.getItem(this.SETTINGS).split(',').forEach((v, i) => {
         if (v != null && v != 'null' && v != '[object Object]') {
           settingsArray[i].value = v;
         }
@@ -94,8 +112,8 @@ export default class DataManager {
   get useTagautocomplete() { return useTagautocomplete; }
   get sizePresetBase() { return sizePresetBase; }
 
+  get backendName() { return backendName; }
   get controller() { return controller; }
-  get message() { return message; }
   get isGenerating() { return isGenerating; }
 
   get taglist() { return taglist; }
@@ -116,17 +134,17 @@ export default class DataManager {
   }
 
   resetSettings() {
-    localStorage.removeItem("chibi.settings");
+    localStorage.removeItem(this.SETTINGS);
     location.reload();
   }
 
   saveGenerationInfo(info) {
     if (info != null) {
-      localStorage.setItem("chibi.generationInfo", JSON.stringify(info));
+      localStorage.setItem(this.GENERATION_INFO, JSON.stringify(info));
     }
   }
   loadGenerationInfo() {
-    const infoFromStorage = localStorage.getItem("chibi.generationInfo");
+    const infoFromStorage = localStorage.getItem(this.GENERATION_INFO);
     if (!infoFromStorage || infoFromStorage == "null") {
       return null;
     }
@@ -135,11 +153,11 @@ export default class DataManager {
 
   saveHistory(history) {
     if (history != null) {
-      localStorage.setItem("chibi.history", JSON.stringify(history));
+      localStorage.setItem(this.HISTORY, JSON.stringify(history));
     }
   }
   loadHistory() {
-    const historyFromStorage = localStorage.getItem("chibi.history");
+    const historyFromStorage = localStorage.getItem(this.HISTORY);
     if (!historyFromStorage || historyFromStorage == "null") {
       return [];
     }
@@ -151,7 +169,7 @@ export default class DataManager {
     }
   }
   clearHistory() {
-    localStorage.removeItem("chibi.history");
+    localStorage.removeItem(this.HISTORY);
     location.reload();
   }
 }

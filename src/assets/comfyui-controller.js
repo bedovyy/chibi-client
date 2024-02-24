@@ -3,10 +3,6 @@ import axios from "axios";
 import { uuidv4 } from '@/assets/utils';
 import { generateComfyObjects } from '@/assets/comfy-object-draft';
 
-// data-manager-dependency....
-import DataManager from "./data-manager";
-const dataManager = DataManager.getInstance();
-
 export default class ComfyUIController extends AController {
   // websocket
   clientId = null;
@@ -19,9 +15,11 @@ export default class ComfyUIController extends AController {
   arrayType = null;
   comfyObjects = null;
 
-  // prompt_id
+  // generate state and related
   prompt_id = null;
   generationInfo = null; //TODO: use workflow later
+  imageFormat = "webp";
+  imageQuality = 70;
 
   static async checkUrl(url) {
     try {
@@ -45,19 +43,23 @@ export default class ComfyUIController extends AController {
     if (outputs) {
       Object.values(outputs).forEach(outputNodes => {
         Object.values(outputNodes.images).forEach(async imageInfo => {
-          this.listener(`${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`, this.generationInfo);
+          this.listener("done", `${this.url}/view?filename=${imageInfo.filename}&subfolder=${imageInfo.subfolder}&type=${imageInfo.type}`, this.generationInfo);
           this.generationInfo = null;
           this.prompt_id = null;
-          dataManager.isGenerating.value = false;
         });
       });
     }
   }
 
   async messageListener(e) {
-    console.log(Date() + " ws : message", e);
     const json = JSON.parse(e.data);
-    dataManager.message.value = json;
+    console.log(Date() + " ws : message", json);
+    if (json.type == "status") {
+      return;
+    }
+    const message = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
+    const progress = json.type == "progress" ? Math.floor(Number(json.data.value) / Number(json.data.max) * 100) : 0;
+    this.listener("running", message, progress);
 
     // clumsy ws hanging solution.
     if (this.timeoutWS) {
@@ -75,7 +77,7 @@ export default class ComfyUIController extends AController {
     this.websocket.onmessage = this.messageListener.bind(this);
     this.websocket.onopen = (e) => {
       console.log(Date() + " ws: open", e);
-      if (dataManager.isGenerating && this.prompt_id) {
+      if (this.prompt_id) {
         // collect missing image.
         this.getheringImages(this.prompt_id);
       }
@@ -83,7 +85,6 @@ export default class ComfyUIController extends AController {
     this.websocket.onclose = (e) => {
       console.log(Date() + " ws: closed", e);
       setTimeout(() => this.createWebSocket(), 1000);
-      // dataManager.isGenerating.value = false;
     }
     this.websocket.onerror = (e) => {
       console.log(Date() + " ws: error", e);
@@ -113,6 +114,14 @@ export default class ComfyUIController extends AController {
     return this.arrayType.KSampler.scheduler;
   }
 
+  setImageFormat(format, quality) {
+    this.imageFormat = format;
+    this.imageQuality = quality;
+  }
+  getImageFormat() {
+    return [this.imageFormat, this.imageQuality];
+  }
+
   makeTxt2ImgObject() {
     this.comfyObjects = {
       model: new this.node.CheckpointLoaderSimple(),
@@ -123,7 +132,7 @@ export default class ComfyUIController extends AController {
       vae: new this.node.VAELoader(),
       vaeDecoder: new this.node.VAEDecode(),
       saveImage: new this.node.SaveImage(),
-      saveImageWebp: new this.node.SaveAnimatedWEBP(null, "CHIBI", 0.01, false, dataManager.imageQuality.value, "default"),
+      saveImageWebp: new this.node.SaveAnimatedWEBP(null, "CHIBI", 0.01, false, this.imageQuality, "default"),
     };
     this.comfyObjects.prompt.set("clip", this.comfyObjects.model);
     this.comfyObjects.negative.set("clip", this.comfyObjects.model.CLIP);
@@ -140,14 +149,9 @@ export default class ComfyUIController extends AController {
   }
 
   async generate(info) {
-    if (dataManager.keepGenerationInfo.value) {
-      dataManager.saveGenerationInfo(info);
-    }
-
     if (!this.comfyObjects) {
       this.makeTxt2ImgObject();
     }
-    const actualSeed = info.seed > 0 ? info.seed : Math.floor(Math.random() * 9999999998 + 1); // 0 for seed?
     this.comfyObjects.model.set("ckpt_name", info.checkpoint);
     this.comfyObjects.prompt.set("text", info.prompt);
     this.comfyObjects.negative.set("text", info.negative_prompt);
@@ -155,9 +159,9 @@ export default class ComfyUIController extends AController {
     this.comfyObjects.emptyLatent.set("height", info.height);
     this.comfyObjects.sampler.set("steps", info.steps);
     this.comfyObjects.sampler.set("cfg", info.cfg_scale);
-    this.comfyObjects.sampler.set("sampler_name", info.sampler_index);
+    this.comfyObjects.sampler.set("sampler_name", info.sampler_name);
     this.comfyObjects.sampler.set("scheduler", info.scheduler);
-    this.comfyObjects.sampler.set("seed", actualSeed);
+    this.comfyObjects.sampler.set("seed", info.seed);
     if (vae.info) {
       this.comfyObjects.vae.set("vae_name", vae.info);
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.vae);
@@ -165,15 +169,17 @@ export default class ComfyUIController extends AController {
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.model.VAE);
     }
 
-    this.comfyObjects.saveImageWebp.set("quality", dataManager.imageQuality.value);
-    const target = (dataManager.imageFormat.value == 'webp') ? this.comfyObjects.saveImageWebp : this.comfyObjects.saveImage;
-    dataManager.isGenerating.value = true;
-    const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: target.toWorkflow(), client_id: this.clientId }));
-    this.prompt_id = res.data.prompt_id;
-    this.generationInfo = info;
-    this.generationInfo.seed = actualSeed;  // change -1 to actual seed
+    this.comfyObjects.saveImageWebp.set("quality", this.imageQuality);
+    try {
+      const target = (this.imageFormat == 'webp') ? this.comfyObjects.saveImageWebp : this.comfyObjects.saveImage;
+      const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: target.toWorkflow(), client_id: this.clientId }));
+      this.prompt_id = res.data.prompt_id;
+      this.generationInfo = info;
 
-    // just in case ws hangs.
-    this.timeoutWS = setTimeout(() => this.createWebSocket(), 1000);
+      // just in case ws hangs.
+      this.timeoutWS = setTimeout(() => this.createWebSocket(), 1000);
+    } catch (e) {
+      this.listener("error", e);
+    }
   }
 }

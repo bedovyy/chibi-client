@@ -16,7 +16,7 @@ const height = defineModel('height', { default: 1216 });
 const steps = defineModel('steps', { default: 28 })
 const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
 const seed = defineModel('seed', { default: -1 });
-const sampler_index = defineModel('sampler_index', { default: null });
+const sampler_name = defineModel('sampler_name', { default: null });
 const scheduler = defineModel('scheduler', { default: null });
 
 const sizePreset = computed({
@@ -74,7 +74,7 @@ watch(controller, async (newVal) => {
       steps.value = info.steps;
       cfg_scale.value = info.cfg_scale;
       seed.value = info.seed; // do i need?
-      sampler_index.value = info.sampler_index;
+      sampler_name.value = info.sampler_name;
       scheduler.value = info.scheduler;
     }
   }
@@ -82,7 +82,7 @@ watch(controller, async (newVal) => {
   watch(DataManager.getInstance().importedInfo, info => {
     if (info) {
       checkpoint.value = info.checkpoint;
-      vae.value = info.vae;
+      vae.value = info.vae ? info.vae : "< none >";
       prompt.value = info.prompt;
       negative_prompt.value = info.negative_prompt;
       width.value = info.width;
@@ -90,7 +90,7 @@ watch(controller, async (newVal) => {
       steps.value = info.steps;
       cfg_scale.value = info.cfg_scale;
       seed.value = info.seed; // do i need?
-      sampler_index.value = info.sampler_index;
+      sampler_name.value = info.sampler_name;
       scheduler.value = info.scheduler;
     }
     DataManager.getInstance().importedInfo.value = null;
@@ -106,11 +106,13 @@ watch(controller, async (newVal) => {
     vae.value = vaeList[0];
   }
   samplerList = newVal.getSamplers();
-  if (!sampler_index.value || !samplerList.includes(sampler_index.value)) {
-    sampler_index.value = samplerList[0];
+  if (!sampler_name.value || !samplerList.includes(sampler_name.value)) {
+    sampler_name.value = samplerList[0];
   }
   schedulerList = newVal.getSchedulers();
-  if (!scheduler.value || !schedulerList.includes(scheduler.value)) {
+  if (!schedulerList) {
+    scheduler.value = null;
+  } else if (!scheduler.value || !schedulerList.includes(scheduler.value)) {
     scheduler.value = schedulerList[0];
   }
 });
@@ -129,6 +131,7 @@ function keyboardShortcut(e) {
 }
 
 async function generate() {
+  isGenerating.value = true;
   const info = {
     checkpoint: checkpoint.value,
     vae: (vae.value == "< none >") ? null : vae.value,
@@ -138,13 +141,19 @@ async function generate() {
     height: height.value,
     steps: steps.value,
     cfg_scale: cfg_scale.value,
-    seed: seed.value,
-    sampler_index: sampler_index.value,
+    seed: seed.value > 0 ? seed.value : Math.floor(Math.random() * 9999999998 + 1),
+    sampler_name: sampler_name.value,
   }
   if (scheduler.value) {
     info.scheduler = scheduler.value;
   }
-  controller.value.generate(info);
+  controller.value.setImageFormat(DataManager.getInstance().imageFormat.value, DataManager.getInstance().imageQuality.value);
+  controller.value.generate(Object.assign({}, info));
+
+  if (DataManager.getInstance().keepGenerationInfo.value) {
+    info.seed = seed.value;
+    DataManager.getInstance().saveGenerationInfo(info);
+  }
 }
 </script>
 
@@ -181,13 +190,11 @@ async function generate() {
       <input type="range" id="cfg_scale" min="0" :max="maxCfg" step="0.1" v-model="cfg_scale">
       <div class="row">
         <div>
-          <label for="sampler_index">Sampler</label>
-          <!-- <input id="sampler_index" v-model="sampler_index"> -->
-          <Dropdown id="sampler_index" v-model="sampler_index" v-model:datalist="samplerList"></Dropdown>
+          <label for="sampler_name">Sampler</label>
+          <Dropdown id="sampler_name" v-model="sampler_name" v-model:datalist="samplerList"></Dropdown>
         </div>
         <div v-if="schedulerList">
           <label for="scheduler">Scheduler</label>
-          <!-- <input id="sampler_index" v-model="sampler_index"> -->
           <Dropdown id="scheduler" v-model="scheduler" v-model:datalist="schedulerList"></Dropdown>
         </div>
       </div>

@@ -8,7 +8,7 @@ export default class AController {
       throw new TypeError('abstract class');
     }
     this.url = url;
-    this.setOnFinishListener(listener);
+    this.setOnListener(listener);
   }
 
   static async checkUrl(url) {}
@@ -16,8 +16,8 @@ export default class AController {
   getCheckpoints() {}
   getSamplers() {}
   getSchedulers() {}
-  async generate() {}
-  setOnFinishListener(listener) {
+  async generate(info) {}
+  setOnListener(listener) {
     this.listener = listener;
   }
 }
