@@ -39,7 +39,7 @@ export function generateComfyObjects(jsonObject) {
 
       constructor() {
         this.name = nodeName;
-        this.id = `${this.name}-${uuidv4()}`;
+        this.id = this.name.includes('CheckpointLoaderSimple') ? this.name : `${this.name}-${uuidv4()}`;
         let argIndex = 0;
         // makit for loop if possible.
         if (jsonObject[nodeName].input.required) {
