@@ -51,23 +51,27 @@ export default class ComfyUIController extends AController {
     }
   }
 
-  async messageListener(e) {
-    const json = JSON.parse(e.data);
-    console.log(Date() + " ws : message", json);
-    if (json.type == "status") {
-      return;
-    }
-    const message = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
-    const progress = json.type == "progress" ? Math.floor(Number(json.data.value) / Number(json.data.max) * 100) : 0;
-    this.listener("running", message, progress);
-
-    // clumsy ws hanging solution.
-    if (this.timeoutWS) {
-      this.timeoutWS = clearTimeout(this.timeoutWS);
-    }
-
-    if (json.data.node === null && json.data.prompt_id != null) {
-      this.getheringImages(json.data.prompt_id);
+  async messageListener(msg) {
+    try {
+      const json = JSON.parse(msg.data);
+      console.log(Date() + " ws : message", json);
+      if (json.type == "status") {
+        return;
+      }
+      const message = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
+      const progress = json.type == "progress" ? Math.floor(Number(json.data.value) / Number(json.data.max) * 100) : 0;
+      this.listener("running", message, progress);
+  
+      // clumsy ws hanging solution.
+      if (this.timeoutWS) {
+        this.timeoutWS = clearTimeout(this.timeoutWS);
+      }
+  
+      if (json.data.node === null && json.data.prompt_id != null) {
+        this.getheringImages(json.data.prompt_id);
+      }
+    } catch (e) { // maybe preview
+      this.listener("preview", msg.data);
     }
   }
 

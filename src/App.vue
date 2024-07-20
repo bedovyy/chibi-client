@@ -72,6 +72,15 @@ function handleControllerEvent(state, data, extra) {
       dataManager.saveHistory(history.value);
       isGenerating.value = false;
       break;
+    case "preview":
+      console.log(data)
+      //TODO: find out why it's comming as blob not arraybuffer?
+      const buffer = data.slice(4)
+      const imageType = data[0]
+      let mime = (imageType == 2) ? "image/png" : "image/jpeg";
+      const blob = new Blob([buffer.slice(4)], { type: mime })
+      currentImage.value = URL.createObjectURL(blob);
+      break
     case "error":
       isGenerating.value = false;
       break;
