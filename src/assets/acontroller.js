@@ -16,6 +16,7 @@ export default class AController {
   getCheckpoints() {}
   getSamplers() {}
   getSchedulers() {}
+  getLoras() {}
   async generate(info) {}
   setOnListener(listener) {
     this.listener = listener;

@@ -102,6 +102,7 @@ function hideList(e) {
     border-radius: 10px;
     z-index: 2;
     cursor: pointer;
+    overflow: auto;
 
     >li {
       padding: 6px;

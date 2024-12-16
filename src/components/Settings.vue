@@ -46,8 +46,8 @@ function resetSettings() {
 }
 function clearHistory() {
   clearHistoryButtonEl.value.classList.add('pressing');
-  resetTimeout = setTimeout(() => {
-    DataManager.getInstance().clearHistory();
+  resetTimeout = setTimeout(async () => {
+    await DataManager.getInstance().clearHistory();
     resetCount = -1;
   }, 2000);
 }
@@ -82,7 +82,7 @@ function skipReset() {
     </div>
 
     <div class="section">
-      <h1>Saving image <sup v-if="DataManager.getInstance().backendName.value == 'web UI'" class="note">*WebUI's setting will be changed</sup></h1>
+      <h1>Saving image <sup v-if="DataManager.getInstance().backendName.value == 'webui'" class="note">*WebUI's setting will be changed</sup></h1>
       <div class="row">
         <label for="imageFormat">File format for images</label>
         <Dropdown id="imageFormat" v-model="imageFormat" v-model:datalist="imageFormatList"></Dropdown>

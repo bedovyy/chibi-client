@@ -4,13 +4,15 @@ import TagAutocomplete from './TagAutocomplete.vue';
 import Dropdown from './Dropdown.vue';
 import DataManager from '@/assets/data-manager';
 
+const SELECT_NONE = "< none >";
+
 const controller = DataManager.getInstance().controller;
 const isGenerating = DataManager.getInstance().isGenerating;
 
 const checkpoint = defineModel('ckpt', { default: null });
 const vae = defineModel('vae', { default: null });
-const prompt = defineModel('prompt', { default: "\n\nhighly detailed, masterpiece, best quality" });
-const negative_prompt = defineModel('negative_prompt', { default: "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry, artist name, coryright name," });
+const prompt = defineModel('prompt', { default: "\n\n, masterpiece, best quality, highres, absurdres, aesthetic, very detailed" });
+const negative_prompt = defineModel('negative_prompt', { default: "worst quality, low quality, lowres, displeasing, 1970s, 1980s, 1990s, old" });
 const width = defineModel('width', { default: 832 });
 const height = defineModel('height', { default: 1216 });
 const steps = defineModel('steps', { default: 28 })
@@ -18,6 +20,7 @@ const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
 const seed = defineModel('seed', { default: -1 });
 const sampler_name = defineModel('sampler_name', { default: null });
 const scheduler = defineModel('scheduler', { default: null });
+const loras = ref([]);
 
 const sizePreset = computed({
   get() {
@@ -51,6 +54,12 @@ const detailsText = computed(() => !isDetailsOpen.value && checkpoint.value ? ch
 function toggleModels(e) {
   isDetailsOpen.value = e.newState == "open"
 }
+const isLorasOpen = ref(false);
+const loraCount = computed(() => loras.value?.length + " lora" + (loras.value?.length > 1 ? "s" : ""));
+function toggleLoras(e) {
+  isLorasOpen.value = e.newState == "open"
+}
+const hasClipWeight = computed(() => DataManager.getInstance().backendName.value === 'comfyui');
 
 watch([steps, cfg_scale], ([newSteps, newCfg]) => {
   steps.value = Math.max(1, Math.min(120, newSteps));
@@ -61,6 +70,7 @@ let ckptList = null;
 let vaeList = null;
 let samplerList = null;
 let schedulerList = null;
+let loraList = null;
 watch(controller, async (newVal) => {
   if (DataManager.getInstance().keepGenerationInfo.value) {
     const info = DataManager.getInstance().loadGenerationInfo();
@@ -76,13 +86,14 @@ watch(controller, async (newVal) => {
       seed.value = info.seed; // do i need?
       sampler_name.value = info.sampler_name;
       scheduler.value = info.scheduler;
+      loras.value = info.loras || [];
     }
   }
 
   watch(DataManager.getInstance().importedInfo, info => {
     if (info) {
       checkpoint.value = info.checkpoint;
-      vae.value = info.vae ? info.vae : "< none >";
+      vae.value = info.vae ? info.vae : SELECT_NONE;
       prompt.value = info.prompt;
       negative_prompt.value = info.negative_prompt;
       width.value = info.width;
@@ -92,6 +103,7 @@ watch(controller, async (newVal) => {
       seed.value = info.seed; // do i need?
       sampler_name.value = info.sampler_name;
       scheduler.value = info.scheduler;
+      loras.value = info.loras || [];
     }
     DataManager.getInstance().importedInfo.value = null;
   });
@@ -101,7 +113,7 @@ watch(controller, async (newVal) => {
   if (!checkpoint.value || !ckptList.includes(checkpoint.value)) {
     checkpoint.value = ckptList[0];
   }
-  vaeList = ["< none >", ...newVal.getVAEs()];
+  vaeList = [SELECT_NONE, ...newVal.getVAEs()];
   if (!vae.value || !vaeList.includes(vae.value)) {
     vae.value = vaeList[0];
   }
@@ -115,6 +127,7 @@ watch(controller, async (newVal) => {
   } else if (!scheduler.value || !schedulerList.includes(scheduler.value)) {
     scheduler.value = schedulerList[0];
   }
+  loraList = [SELECT_NONE, ...newVal.getLoras()];
 });
 
 onMounted(() => {
@@ -124,6 +137,18 @@ onUnmounted(() => {
   window.removeEventListener('keydown', keyboardShortcut);
 })
 
+function addLora() {
+  const empty_item = { lora_name: SELECT_NONE, strength_model: "1.0", strength_clip: "1.0" }
+  loras.value.push(empty_item);
+}
+function removeLora(lora) {
+  const i = loras.value.findIndex(l => l === lora)
+  if (i > -1) {
+    loras.value.splice(i, 1)
+  }
+  loras.value = loras.value;
+}
+
 function keyboardShortcut(e) {
   if (e.key == "Enter" && e.ctrlKey && !isGenerating.value) {
     generate();
@@ -132,9 +157,11 @@ function keyboardShortcut(e) {
 
 async function generate() {
   isGenerating.value = true;
+  loras.value = loras.value.filter(l => l.lora_name != SELECT_NONE);
+
   const info = {
     checkpoint: checkpoint.value,
-    vae: (vae.value == "< none >") ? null : vae.value,
+    vae: (vae.value == SELECT_NONE) ? null : vae.value,
     prompt: prompt.value,
     negative_prompt: negative_prompt.value,
     width: width.value,
@@ -143,6 +170,7 @@ async function generate() {
     cfg_scale: cfg_scale.value,
     seed: seed.value > 0 ? seed.value : Math.floor(Math.random() * 9999999998 + 1),
     sampler_name: sampler_name.value,
+    loras: loras.value,
   }
   if (scheduler.value) {
     info.scheduler = scheduler.value;
@@ -167,6 +195,23 @@ async function generate() {
         <label for="vae">VAE</label>
         <Dropdown id="vae" v-model="vae" v-model:datalist="vaeList"></Dropdown>
       </details>
+     <details @toggle="toggleLoras">
+        <summary>Loras <span>{{ loraCount }}</span></summary>
+        <div class="row">
+          <div style="min-width: 50%; text-align: center;">name</div>
+          <div style="text-align: center;">model / clip weight</div>
+        </div>
+        <div v-for="lora, i in loras" :key="lora.lora_name">
+          <div class="row">
+            <Dropdown style="min-width: 50%;" :id="'lora' + i" v-model="loras[i].lora_name" v-model:datalist="loraList"></Dropdown>
+            <input class="right" type="text" :id="'lora_m_weight' + i" v-model="loras[i].strength_model">
+            <input v-if="hasClipWeight" class="right" type="text" :id="'lora_c_weight' + i" v-model="loras[i].strength_clip">
+            <button @click="removeLora(lora)">✖</button>
+          </div>
+        </div>
+        <button v-if="loras.length<10" style="width: 100%" @click="addLora()">＋</button>
+      </details>
+
       <label for="prompt">Prompt</label>
       <TagAutocomplete id="prompt" v-model="prompt"></TagAutocomplete>
       <!-- <textarea id="prompt" rows="4" v-model="prompt"></textarea> -->
@@ -176,7 +221,7 @@ async function generate() {
       <label for="image-size">Image size</label>
       <div class="row">
         <Dropdown style="max-width: 45%;" v-model="sizePreset" v-model:datalist="sizePresetList"></Dropdown>
-        <div class="row">
+       <div class="row">
           <div class="size">
             <input maxlength="4" v-model="width">
             <div>✕</div>
@@ -231,6 +276,7 @@ details {
   background-color: #7773;
   padding: 4px;
   border-radius: 8px;
+  margin-bottom: 2px;
 
   summary {
     font-size: 0.8rem;
@@ -242,6 +288,7 @@ label {
   font-size: 1rem;
   font-weight: bold;
   display: block;
+  pointer-events: none;
 }
 
 textarea {
@@ -270,6 +317,10 @@ textarea {
     min-width: 28px;
     text-align: center;
   }
+}
+
+input.right {
+  text-align: right;
 }
 
 button.generate-button {

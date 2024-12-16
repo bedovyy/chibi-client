@@ -14,6 +14,7 @@ export default class ComfyUIController extends AController {
   type = null;
   arrayType = null;
   comfyObjects = null;
+  comfyLoraObjects = [];
 
   // generate state and related
   prompt_id = null;
@@ -54,11 +55,11 @@ export default class ComfyUIController extends AController {
   async messageListener(msg) {
     try {
       const json = JSON.parse(msg.data);
-      console.log(Date() + " ws : message", json);
+      // console.log(Date() + " ws : message", json);
       if (json.type == "status") {
         return;
       }
-      const message = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[0]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
+      const message = json.type.toUpperCase() + (json.data.node ? `: ${json.data.node.split('-')[1]}` : "") + (json.type == "progress" ? ` ${json.data.value} / ${json.data.max}` : "");
       const progress = json.type == "progress" ? Math.floor(Number(json.data.value) / Number(json.data.max) * 100) : 0;
       this.listener("running", message, progress);
   
@@ -102,7 +103,7 @@ export default class ComfyUIController extends AController {
 
     const objectInfo = await axios.get(`${this.url}/object_info`);
     [this.node, this.type, this.arrayType] = generateComfyObjects(objectInfo.data);
-    console.log(this.node, this.type, this.arrayType);
+    // console.log(this.node, this.type, this.arrayType);
   }
 
   getCheckpoints() {
@@ -116,6 +117,9 @@ export default class ComfyUIController extends AController {
   }
   getSchedulers() {
     return this.arrayType.KSampler.scheduler;
+  }
+  getLoras() {
+    return this.arrayType.LoraLoader.lora_name;
   }
 
   setImageFormat(format, quality) {
@@ -152,6 +156,13 @@ export default class ComfyUIController extends AController {
     this.comfyObjects.saveImageWebp.set("images", this.comfyObjects.vaeDecoder);
   }
 
+  makeLoraObjects(length) {
+    while (this.comfyLoraObjects.length < length) {
+      this.comfyLoraObjects.push(new this.node.LoraLoader())
+    }
+    return this.comfyLoraObjects.slice(0, length);
+  }
+
   async generate(info) {
     if (!this.comfyObjects) {
       this.makeTxt2ImgObject();
@@ -161,19 +172,33 @@ export default class ComfyUIController extends AController {
     this.comfyObjects.negative.set("text", info.negative_prompt);
     this.comfyObjects.emptyLatent.set("width", info.width);
     this.comfyObjects.emptyLatent.set("height", info.height);
+    this.comfyObjects.sampler.set("model", this.comfyObjects.model.MODEL);
     this.comfyObjects.sampler.set("steps", info.steps);
     this.comfyObjects.sampler.set("cfg", info.cfg_scale);
     this.comfyObjects.sampler.set("sampler_name", info.sampler_name);
     this.comfyObjects.sampler.set("scheduler", info.scheduler);
     this.comfyObjects.sampler.set("seed", info.seed);
-    if (vae.info) {
-      this.comfyObjects.vae.set("vae_name", vae.info);
+    if (info.vae) {
+      this.comfyObjects.vae.set("vae_name", info.vae);
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.vae);
     } else {
       this.comfyObjects.vaeDecoder.set("vae", this.comfyObjects.model.VAE);
     }
-
     this.comfyObjects.saveImageWebp.set("quality", this.imageQuality);
+
+    if (info.loras?.length > 0) {
+      const loraObjects = this.makeLoraObjects(info.loras?.length);
+      for (var i = 0; i < info.loras.length; i++) {
+        loraObjects[i].set("model", (i > 0) ? loraObjects[i-1].MODEL : this.comfyObjects.model.MODEL)
+        loraObjects[i].set("clip", (i > 0) ? loraObjects[i-1].CLIP : this.comfyObjects.model.CLIP)
+        loraObjects[i].set("lora_name", info.loras[i].lora_name)
+        loraObjects[i].set("strength_model", info.loras[i].strength_model)
+        loraObjects[i].set("strength_clip", info.loras[i].strength_clip)
+      }
+      this.comfyObjects.sampler.set("model", loraObjects[info.loras.length - 1].MODEL);
+      this.comfyObjects.prompt.set("clip", loraObjects[info.loras.length - 1].CLIP)
+    }
+    
     try {
       const target = (this.imageFormat == 'webp') ? this.comfyObjects.saveImageWebp : this.comfyObjects.saveImage;
       const res = await axios.post(`${this.url}/prompt`, JSON.stringify({ prompt: target.toWorkflow(), client_id: this.clientId }));

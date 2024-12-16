@@ -24,7 +24,8 @@ export default class WebUIController extends AController {
   getCheckpoints() { return this.checkpoints; }
   getVAEs() { return this.vaes; }
   getSamplers() { return this.samplers; }
-  getSchedulers() { }
+  getSchedulers() { return this.schedulers; }
+  getLoras() { return this.loras; }
 
   setImageFormat(imageFormat, imageQuality) {
     this.imageFormat = imageFormat;
@@ -37,8 +38,15 @@ export default class WebUIController extends AController {
 
   async prepare() {
     this.checkpoints = (await axios.get(`${this.url}/sdapi/v1/sd-models`)).data.filter(v => v != "").map(v => v.title.replace(/\[[^\]]*\]$/, "").trim());
-    this.vaes = (await axios.get(`${this.url}/sdapi/v1/sd-vae`)).data.map(v => v.model_name);
+    try {
+      this.vaes = (await axios.get(`${this.url}/sdapi/v1/sd-vae`)).data.map(v => v.model_name);
+    } catch (e) { // forge
+      this.vaes = (await axios.get(`${this.url}/sdapi/v1/sd-modules`)).data.filter(v => v.filename.includes("VAE")).map(v => v.model_name);
+    }
+    
     this.samplers = (await axios.get(`${this.url}/sdapi/v1/samplers`)).data.map(v => v.name);
+    this.schedulers = (await axios.get(`${this.url}/sdapi/v1/schedulers`)).data.map(v => v.name);
+    this.loras = (await axios.get(`${this.url}/sdapi/v1/loras`)).data.map(v => v.name);
 
     const options = (await axios.get(`${this.url}/sdapi/v1/options`)).data;
     this.imageFormat = options.samples_format;
@@ -60,6 +68,10 @@ export default class WebUIController extends AController {
     delete params.checkpoint;
     delete params.vae;
     params.save_images = true;
+
+    for (let lora of params.loras) {
+      params.prompt += ` <lora:${lora.lora_name}:${lora.strength_model}>`;
+    }
 
     try {
       // change checkpoint and vae model.

@@ -1,8 +1,6 @@
 import { computed, ref, watch } from "vue";
 import { parseCSV } from '@/assets/utils';
-
-import taglistCSV from '/taglist/danbooru2023-compact.csv';
-import extraCSV from '/taglist/extra-animagine-xl-3.0.csv';
+import History from '@/assets/history';
 
 const token = "This is token for keeping singleton";
 let instance = null;
@@ -14,11 +12,11 @@ const useTagautocomplete = ref(true);
 const theme = ref('radio-black');
 const historyWidth = ref(150);
 const fontSize = ref(16);
-const maxSteps = ref(60);
-const maxCfg = ref(20);
+const maxSteps = ref(40);
+const maxCfg = ref(10);
 const imageFormat = ref("webp");  // webp, png
 const imageQuality = ref(70);
-const sizePresetBase = ref("All");
+const sizePresetBase = ref("SDXL");
 
 const settingsArray = [
   url,
@@ -42,8 +40,8 @@ const isGenerating = ref(false);
 // tagautocomplete
 const taglist = ref();
 const extraTaglist = ref();
-fetch(taglistCSV).then(res => res.text()).then(text => { taglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
-fetch(extraCSV).then(res => res.text()).then(text => { extraTaglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
+fetch('customs/taglist/danbooru_241106_compact.csv').then(res => res.text()).then(text => { taglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
+fetch('customs/taglist/extra.csv').then(res => res.text()).then(text => { extraTaglist.value = parseCSV(text.replaceAll('_', ' ').replaceAll('(', '\\(').replaceAll(')', '\\)')); });
 
 // import info
 const importedInfo = ref();
@@ -74,7 +72,7 @@ export default class DataManager {
     // moved here for using this.GENERATION_INFO
     watch(settingsArray, () => {
       fontSize.value = Math.max(10, Math.min(30, fontSize.value));
-      maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(120, maxSteps.value));
+      maxSteps.value = maxSteps.value == "" ? maxSteps.value : Math.max(1, Math.min(50, maxSteps.value));
       maxCfg.value = maxCfg.value == "" ? maxCfg.value : Math.max(1, Math.min(50, maxCfg.value));
       if (!keepGenerationInfo.value) {
         localStorage.removeItem(this.GENERATION_INFO);
@@ -119,7 +117,8 @@ export default class DataManager {
   get taglist() { return taglist; }
   get extraTaglist() { return extraTaglist; }
 
-  get importedInfo() { return importedInfo; }
+  get importedInfo() { 
+    return importedInfo; }
 
   isExtension() {
     return controller.value != null && url.value.includes(window.location.host);
@@ -151,25 +150,24 @@ export default class DataManager {
     return JSON.parse(infoFromStorage);
   }
 
-  saveHistory(history) {
-    if (history != null) {
-      localStorage.setItem(this.HISTORY, JSON.stringify(history));
-    }
+  async saveHistory(url, info) {
+    await History.open();
+    await History.push(url, JSON.stringify(info));
   }
-  loadHistory() {
-    const historyFromStorage = localStorage.getItem(this.HISTORY);
-    if (!historyFromStorage || historyFromStorage == "null") {
-      return [];
-    }
-    try {
-      return JSON.parse(historyFromStorage);
-    } catch (e) {
-      console.log(e);
-      return historyFromStorage.split(',').map(url => ({ url, info: null }));
-    }
+  async loadHistory() {
+    let history = []
+    await History.open()
+    history = await History.getAll();
+    history.forEach(h => {
+      h.info = JSON.parse(h.info);
+    })
+    return history;
   }
-  clearHistory() {
+  async clearHistory() {
+    localStorage.removeItem(this.GENERATION_INFO);
     localStorage.removeItem(this.HISTORY);
+    await History.open();
+    await History.clearAll();
     location.reload();
   }
 }

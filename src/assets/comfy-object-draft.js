@@ -1,5 +1,7 @@
 import { uuidv4 } from "@/assets/utils"
 
+let id = 0;
+
 export function generateComfyObjects(jsonObject) {
   // making types
   // collect inputs from json object
@@ -39,7 +41,7 @@ export function generateComfyObjects(jsonObject) {
 
       constructor() {
         this.name = nodeName;
-        this.id = this.name.includes('CheckpointLoaderSimple') ? this.name : `${this.name}-${uuidv4()}`;
+        this.id = `${++id}-${this.name}`; //this.name.includes('CheckpointLoaderSimple') ? this.name : `${this.name}-${uuidv4()}`;
         let argIndex = 0;
         // makit for loop if possible.
         if (jsonObject[nodeName].input.required) {
@@ -144,7 +146,6 @@ export function generateComfyObjects(jsonObject) {
         json[this.id]["class_type"] = this.name;
         // json[this.id]["_meta"] = {}
         // json[this.id]["_meta"]["title"] = this.name;  // need?
-
         nodesToAppend.forEach(additionalNode => {
           json = Object.assign(json, additionalNode.toWorkflow());
         });

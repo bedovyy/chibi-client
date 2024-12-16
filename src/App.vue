@@ -42,9 +42,9 @@ watch(theme, (newVal) => {
 document.querySelector(":root").classList.add(theme.value);
 
 connectServer();
-onMounted(() => {
+onMounted(async () => {
   // move this to DataManager... which is data manager no more.
-  history.value = dataManager.loadHistory();
+  history.value = await dataManager.loadHistory();
 });
 
 watch(isGenerating, (newVal, oldVal) => {
@@ -69,7 +69,7 @@ function handleControllerEvent(state, data, extra) {
       currentImage.value = data;
       currentInfo.value = Object.assign(extra, { backend: dataManager.backendName.value });
       history.value.push({ url: data, info: extra });
-      dataManager.saveHistory(history.value);
+      dataManager.saveHistory(data, extra);
       isGenerating.value = false;
       break;
     case "preview":
@@ -106,8 +106,8 @@ async function connectServer() {
   // try http first
   const testUrl = `${window.location.protocol}//${urlForTest}`;
   if (await ComfyUIController.checkUrl(testUrl)) {
-    dataManager.backendName.value = "ComfyUI";
-    console.log("use comfyui-controller");
+    dataManager.backendName.value = "comfyui";
+    // console.log("use comfyui-controller");
     const ctrl = new ComfyUIController(testUrl, handleControllerEvent);
     await ctrl.prepare();
     //TODO: generator calc some values like samplers and schedulers when it receive controller,
@@ -115,15 +115,15 @@ async function connectServer() {
     controller.value = ctrl;
     isGenerating.value = false;
   } else if (await WebUIController.checkUrl(testUrl)) {
-    console.log("use webui-controller");
-    dataManager.backendName.value = "web UI";
+    // console.log("use webui-controller");
+    dataManager.backendName.value = "webui";
     const ctrl = new WebUIController(testUrl, handleControllerEvent);
     await ctrl.prepare();
     controller.value = ctrl;
     [dataManager.imageFormat.value, dataManager.imageQuality.value] = ctrl.getImageFormat();
     isGenerating.value = false;
   }
-  console.log(dataManager.backendName.value);
+  console.log("backend: " + dataManager.backendName.value);
 }
 
 function noImg(e) {
@@ -204,7 +204,9 @@ function toogleSettings(e) {
         </div>
         <div class="infotext">
           <strong>{{ currentInfo.prompt }}</strong><br>
-          <em>{{ currentInfo.negative_prompt }}</em><br><br>
+          <em>{{ currentInfo.negative_prompt }}</em><br>
+          <span v-for="lora in currentInfo.loras?.map(l => l.lora_name)" class="box">🧩{{ lora }}</span>
+          <br>
           <span class="box">📐{{ currentInfo.width }}✕{{ currentInfo.height }}</span>
           <span class="box">🌱{{ currentInfo.seed }}</span>
           <br>

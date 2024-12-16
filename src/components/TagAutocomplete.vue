@@ -211,6 +211,7 @@ function selectAutoComplete(index) {
 
   >textarea {
     resize: none;
+    max-height: 30vh;
   }
 
   >ul.autocomplete {
