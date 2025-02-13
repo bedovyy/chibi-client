@@ -22,10 +22,14 @@ async def get_chibi_root(request):
 
 def get_chibi_customs(subpath):
     path = os.path.join(os.path.dirname(os.path.realpath(__file__)), subpath)
-    return web.FileResponse(path) or web.json_response(
-        { "files": [os.path.join(dp.replace(path, ''), f)
-            for dp, dn, filenames in os.walk(path)
-            for f in filenames if os.path.splitext(f)[1] in ['.csv', '.json']]
-        })
+    print(path)
+    if os.path.isdir(path):
+        return web.json_response(
+            { "files": [os.path.join(dp.replace(path, ''), f)
+                for dp, dn, filenames in os.walk(path)
+                for f in filenames if os.path.splitext(f)[1] in ['.csv', '.json']]
+            })
+    return web.FileResponse(path)
+
 
 NODE_CLASS_MAPPINGS = {} # to prevent 'import: failed'
