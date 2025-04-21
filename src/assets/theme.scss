@@ -71,3 +71,137 @@
     filter: invert(1);
   }
 }
+:root.nord {
+  --color-background: #2E3440;
+  --color-background-soft: #3B4252;
+  --color-background-mute: #434C5E;
+
+  --color-border: #4C566A;
+  --color-border-hover: #4C566A;
+
+  --color-heading: var(--vt-c-text-light-1);
+  --color-text: #D8DEE9;
+  --color-text-secondary: #E5E9F0;
+
+  --color-button: #88C0D0;
+  --color-button-hover: #81A1C1;
+  --color-button-text: #2E3440;
+  --color-label: #8FBCBB;
+  --color-disabled: #ECEFF4;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.catppuccin {
+  --color-background: #1E1E2E;
+  --color-background-soft: #181825;
+  --color-background-mute: #11111B;
+
+  --color-border: #313244;
+  --color-border-hover: #45475A;
+
+  --color-heading: #C9CBFF;
+  --color-text: #CDD6F4;
+  --color-text-secondary: #BAC2DE;
+
+  --color-button: #F5E0DC;
+  --color-button-hover: #F2CDCD;
+  --color-button-text: #1E1E2E;
+  --color-label: #F5E0DC;
+  --color-disabled: #6C7086;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.tokyo-night {
+  --color-background: #1A1B26;
+  --color-background-soft: #16161E;
+  --color-background-mute: #13131A;
+
+  --color-border: #292E42;
+  --color-border-hover: #3B4261;
+
+  --color-heading: #A9B1D6;
+  --color-text: #C0CAF5;
+  --color-text-secondary: #9AA5CE;
+
+  --color-button: #7AA2F7;
+  --color-button-hover: #9ABDF5;
+  --color-button-text: #1A1B26;
+  --color-label: #BB9AF7;
+  --color-disabled: #565F89;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.dracula {
+  --color-background: #282A36;
+  --color-background-soft: #1E1F29;
+  --color-background-mute: #181920;
+
+  --color-border: #44475A;
+  --color-border-hover: #6272A4;
+
+  --color-heading: #F8F8F2;
+  --color-text: #F8F8F2;
+  --color-text-secondary: #BD93F9;
+
+  --color-button: #50FA7B;
+  --color-button-hover: #69FF94;
+  --color-button-text: #282A36;
+  --color-label: #FF79C6;
+  --color-disabled: #6272A4;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.gruvbox {
+  --color-background: #282828;
+  --color-background-soft: #1D2021;
+  --color-background-mute: #141617;
+
+  --color-border: #504945;
+  --color-border-hover: #665C54;
+
+  --color-heading: #EBDBB2;
+  --color-text: #FBF1C7;
+  --color-text-secondary: #D5C4A1;
+
+  --color-button: #FABD2F;
+  --color-button-hover: #FE8019;
+  --color-button-text: #282828;
+  --color-label: #83A598;
+  --color-disabled: #665C54;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+:root.amoled {
+  --color-background: #000000;
+  --color-background-soft: #0a0a0a;
+  --color-background-mute: #111111;
+
+  --color-border: #1a1a1a;
+  --color-border-hover: #2a2a2a;
+
+  --color-heading: #ffffff;
+  --color-text: #e0e0e0;
+  --color-text-secondary: #aaaaaa;
+
+  --color-button: #3e929f;
+  --color-button-hover: #85b6bb;
+  --color-button-text: #000000;
+  --color-label: #75909a;
+  --color-disabled: #444444;
+
+  .icon {
+    filter: invert(1);
+  }
+}
+
+

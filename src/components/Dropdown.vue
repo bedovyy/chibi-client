@@ -41,8 +41,8 @@ function hideList(e) {
 
   background-color: var(--color-background);
   color: var(--color-text);
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
+  // border: 2px solid var(--color-border);
+  border-radius: 4px;
   box-sizing: border-box;
   margin: 2px 0;
 
@@ -98,8 +98,8 @@ function hideList(e) {
     margin: 1px 0;
     background: var(--color-background-soft);
     font-size: 0.85rem;
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
+    // border: 1px solid var(--color-border);
+    border-radius: 8px;
     z-index: 2;
     cursor: pointer;
     overflow: auto;
