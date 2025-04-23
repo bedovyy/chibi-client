@@ -17,6 +17,7 @@ const maxCfg = ref(10);
 const imageFormat = ref("webp");  // webp, png
 const imageQuality = ref(70);
 const sizePresetBase = ref("SDXL");
+const showRandomTags = ref(false);
 
 const settingsArray = [
   url,
@@ -29,7 +30,8 @@ const settingsArray = [
   maxCfg,
   imageFormat,
   imageQuality,
-  sizePresetBase
+  sizePresetBase,
+  showRandomTags
 ];
 
 // api controller
@@ -82,12 +84,21 @@ export default class DataManager {
     });
 
     if (localStorage.getItem(this.SETTINGS)) {
-      localStorage.getItem(this.SETTINGS).split(',').forEach((v, i) => {
+      const saved = localStorage.getItem(this.SETTINGS).split(',');
+      saved.forEach((v, i) => {
         if (v != null && v != 'null' && v != '[object Object]') {
-          settingsArray[i].value = v;
+          const refValue = settingsArray[i];
+          if (typeof refValue.value === 'boolean') {
+            refValue.value = (v === 'true');
+          } else if (!isNaN(refValue.value) && refValue.value !== '') {
+            refValue.value = Number(v);
+          } else {
+            refValue.value = v;
+          }
         }
       });
     }
+    
   }
   static getInstance() {
     if (!instance) {
@@ -109,6 +120,7 @@ export default class DataManager {
   get keepGenerationInfo() { return keepGenerationInfo; }
   get useTagautocomplete() { return useTagautocomplete; }
   get sizePresetBase() { return sizePresetBase; }
+  get showRandomTags() { return showRandomTags; }
 
   get backendName() { return backendName; }
   get controller() { return controller; }
@@ -129,7 +141,7 @@ export default class DataManager {
 
   getThemeList() {
     // yeah, it's hard-coded.
-    return ['radio-black', 'radio-white', 'novellus'];
+    return ['radio-black', 'radio-white', 'novellus', 'nord', 'catppuccin', 'tokyo-night', 'dracula', 'gruvbox', 'amoled'];
   }
 
   resetSettings() {

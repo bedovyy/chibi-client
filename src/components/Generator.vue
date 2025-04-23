@@ -1,70 +1,139 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import TagAutocomplete from './TagAutocomplete.vue';
-import Dropdown from './Dropdown.vue';
-import DataManager from '@/assets/data-manager';
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import TagAutocomplete from "./TagAutocomplete.vue";
+import Dropdown from "./Dropdown.vue";
+import DataManager from "@/assets/data-manager";
 
 const SELECT_NONE = "< none >";
+
+const randomTagCount = ref(5);
+
+const taglist = DataManager.getInstance().taglist;
+const extraTaglist = DataManager.getInstance().extraTaglist;
+const showRandomTags = DataManager.getInstance().showRandomTags;
+
+function getTagPool() {
+  return [
+    ...taglist.value.map((tag) => tag[0]),
+    ...extraTaglist.value.map((tag) => tag[0]),
+  ];
+}
+
+function addRandomTags(count = 5) {
+  const currentTags = prompt.value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  const tagPool = getTagPool().filter((tag) => !currentTags.includes(tag));
+  const shuffled = tagPool.sort(() => 0.5 - Math.random());
+  const selected = shuffled.slice(0, count);
+
+  if (selected.length === 0) return;
+
+  const updatedPrompt = [...currentTags, ...selected].join(", ");
+  prompt.value = updatedPrompt;
+}
 
 const controller = DataManager.getInstance().controller;
 const isGenerating = DataManager.getInstance().isGenerating;
 
-const checkpoint = defineModel('ckpt', { default: null });
-const vae = defineModel('vae', { default: null });
-const prompt = defineModel('prompt', { default: "\n\n, masterpiece, best quality, highres, absurdres, aesthetic, very detailed" });
-const negative_prompt = defineModel('negative_prompt', { default: "worst quality, low quality, lowres, displeasing, 1970s, 1980s, 1990s, old" });
-const width = defineModel('width', { default: 832 });
-const height = defineModel('height', { default: 1216 });
-const steps = defineModel('steps', { default: 28 })
-const cfg_scale = defineModel('cfg_scale', { default: 5.0 });
-const seed = defineModel('seed', { default: -1 });
-const sampler_name = defineModel('sampler_name', { default: null });
-const scheduler = defineModel('scheduler', { default: null });
+const checkpoint = defineModel("ckpt", { default: null });
+const vae = defineModel("vae", { default: null });
+const prompt = defineModel("prompt", {
+  default:
+    "\n\n, masterpiece, best quality, highres, absurdres, aesthetic, very detailed",
+});
+const negative_prompt = defineModel("negative_prompt", {
+  default:
+    "worst quality, low quality, lowres, displeasing, 1970s, 1980s, 1990s, old",
+});
+const width = defineModel("width", { default: 832 });
+const height = defineModel("height", { default: 1216 });
+const steps = defineModel("steps", { default: 28 });
+const cfg_scale = defineModel("cfg_scale", { default: 5.0 });
+const seed = defineModel("seed", { default: -1 });
+const sampler_name = defineModel("sampler_name", { default: null });
+const scheduler = defineModel("scheduler", { default: null });
 const loras = ref([]);
 
 const sizePreset = computed({
   get() {
-    const size = width.value + '✕' + height.value + ' ';
-    const sizePreset = sizePresetList.value.find(v => v.includes(size));
+    const size = width.value + "✕" + height.value + " ";
+    const sizePreset = sizePresetList.value.find((v) => v.includes(size));
     return sizePreset ? sizePreset : "custom";
   },
   set(v) {
     const [w, h] = v.split(/[✕ ]/);
-    if (w != 'custom') {
+    if (w != "custom") {
       width.value = w;
       height.value = h;
     }
-  }
+  },
 });
 const sizePresetList = ref(getSizePresetList());
-watch(DataManager.getInstance().sizePresetBase, () => sizePresetList.value = getSizePresetList());
+watch(
+  DataManager.getInstance().sizePresetBase,
+  () => (sizePresetList.value = getSizePresetList())
+);
 function getSizePresetList() {
   const sizePresetLists = {
-    "SD": ['960✕384 (21:9) SD', '832✕448 (16:9) SD', '768✕512 (3:2) SD', '768✕576 (4:3) SD', '640✕640 (1:1) SD', '512✕768 (2:3) SD', '448✕832 (9:16) SD'],
-    "SDXL": ['1536✕640 (21:9) SDXL', '1344✕768 (16:9) SDXL', '1216✕832 (3:2) SDXL', '1152✕896 (4:3) SDXL', '1024✕1024 (1:1) SDXL', '832✕1216 (2:3) SDXL', '768✕1344 (9:16) SDXL'],
-  }
-  return sizePresetLists[DataManager.getInstance().sizePresetBase.value] || [...sizePresetLists.SD, ...sizePresetLists.SDXL, 'custom'];
+    SD: [
+      "960✕384 (21:9) SD",
+      "832✕448 (16:9) SD",
+      "768✕512 (3:2) SD",
+      "768✕576 (4:3) SD",
+      "640✕640 (1:1) SD",
+      "512✕768 (2:3) SD",
+      "448✕832 (9:16) SD",
+    ],
+    SDXL: [
+      "1536✕640 (21:9) SDXL",
+      "1344✕768 (16:9) SDXL",
+      "1216✕832 (3:2) SDXL",
+      "1152✕896 (4:3) SDXL",
+      "1024✕1024 (1:1) SDXL",
+      "832✕1216 (2:3) SDXL",
+      "768✕1344 (9:16) SDXL",
+    ],
+  };
+  return (
+    sizePresetLists[DataManager.getInstance().sizePresetBase.value] || [
+      ...sizePresetLists.SD,
+      ...sizePresetLists.SDXL,
+      "custom",
+    ]
+  );
 }
 
 const maxSteps = DataManager.getInstance().maxSteps;
 const maxCfg = DataManager.getInstance().maxCfg;
 
 const isDetailsOpen = ref(false);
-const detailsText = computed(() => !isDetailsOpen.value && checkpoint.value ? checkpoint.value : "");
+const detailsText = computed(() =>
+  !isDetailsOpen.value && checkpoint.value ? checkpoint.value : ""
+);
 function toggleModels(e) {
-  isDetailsOpen.value = e.newState == "open"
+  isDetailsOpen.value = e.newState == "open";
 }
 const isLorasOpen = ref(false);
-const loraCount = computed(() => loras.value?.length + " lora" + (loras.value?.length > 1 ? "s" : ""));
+const loraCount = computed(
+  () => loras.value?.length + " lora" + (loras.value?.length > 1 ? "s" : "")
+);
 function toggleLoras(e) {
-  isLorasOpen.value = e.newState == "open"
+  isLorasOpen.value = e.newState == "open";
 }
-const hasClipWeight = computed(() => DataManager.getInstance().backendName.value === 'comfyui');
+const hasClipWeight = computed(
+  () => DataManager.getInstance().backendName.value === "comfyui"
+);
 
 watch([steps, cfg_scale], ([newSteps, newCfg]) => {
   steps.value = Math.max(1, Math.min(120, newSteps));
-  cfg_scale.value = newCfg.toString().slice(-1) == '.' ? newCfg : Math.max(0, Math.min(50, newCfg));
-})
+  cfg_scale.value =
+    newCfg.toString().slice(-1) == "."
+      ? newCfg
+      : Math.max(0, Math.min(50, newCfg));
+});
 
 let ckptList = null;
 let vaeList = null;
@@ -90,7 +159,7 @@ watch(controller, async (newVal) => {
     }
   }
 
-  watch(DataManager.getInstance().importedInfo, info => {
+  watch(DataManager.getInstance().importedInfo, (info) => {
     if (info) {
       checkpoint.value = info.checkpoint;
       vae.value = info.vae ? info.vae : SELECT_NONE;
@@ -131,20 +200,24 @@ watch(controller, async (newVal) => {
 });
 
 onMounted(() => {
-  window.addEventListener('keydown', keyboardShortcut);
+  window.addEventListener("keydown", keyboardShortcut);
 });
 onUnmounted(() => {
-  window.removeEventListener('keydown', keyboardShortcut);
-})
+  window.removeEventListener("keydown", keyboardShortcut);
+});
 
 function addLora() {
-  const empty_item = { lora_name: SELECT_NONE, strength_model: "1.0", strength_clip: "1.0" }
+  const empty_item = {
+    lora_name: SELECT_NONE,
+    strength_model: "1.0",
+    strength_clip: "1.0",
+  };
   loras.value.push(empty_item);
 }
 function removeLora(lora) {
-  const i = loras.value.findIndex(l => l === lora)
+  const i = loras.value.findIndex((l) => l === lora);
   if (i > -1) {
-    loras.value.splice(i, 1)
+    loras.value.splice(i, 1);
   }
   loras.value = loras.value;
 }
@@ -157,25 +230,29 @@ function keyboardShortcut(e) {
 
 async function generate() {
   isGenerating.value = true;
-  loras.value = loras.value.filter(l => l.lora_name != SELECT_NONE);
+  loras.value = loras.value.filter((l) => l.lora_name != SELECT_NONE);
 
   const info = {
     checkpoint: checkpoint.value,
-    vae: (vae.value == SELECT_NONE) ? null : vae.value,
+    vae: vae.value == SELECT_NONE ? null : vae.value,
     prompt: prompt.value,
     negative_prompt: negative_prompt.value,
     width: width.value,
     height: height.value,
     steps: steps.value,
     cfg_scale: cfg_scale.value,
-    seed: seed.value > 0 ? seed.value : Math.floor(Math.random() * 9999999998 + 1),
+    seed:
+      seed.value > 0 ? seed.value : Math.floor(Math.random() * 9999999998 + 1),
     sampler_name: sampler_name.value,
     loras: loras.value,
-  }
+  };
   if (scheduler.value) {
     info.scheduler = scheduler.value;
   }
-  controller.value.setImageFormat(DataManager.getInstance().imageFormat.value, DataManager.getInstance().imageQuality.value);
+  controller.value.setImageFormat(
+    DataManager.getInstance().imageFormat.value,
+    DataManager.getInstance().imageQuality.value
+  );
   controller.value.generate(Object.assign({}, info));
 
   if (DataManager.getInstance().keepGenerationInfo.value) {
@@ -189,68 +266,149 @@ async function generate() {
   <div class="generator-wrapper">
     <div>
       <details @toggle="toggleModels">
-        <summary>Models <span>{{ detailsText }}</span></summary>
+        <summary>
+          Models <span>{{ detailsText }}</span>
+        </summary>
         <label for="checkpoint">Checkpoint</label>
-        <Dropdown id="checkpoint" v-model="checkpoint" v-model:datalist="ckptList"></Dropdown>
+        <Dropdown
+          id="checkpoint"
+          v-model="checkpoint"
+          v-model:datalist="ckptList"
+        ></Dropdown>
         <label for="vae">VAE</label>
         <Dropdown id="vae" v-model="vae" v-model:datalist="vaeList"></Dropdown>
       </details>
-     <details @toggle="toggleLoras">
-        <summary>Loras <span>{{ loraCount }}</span></summary>
+      <details @toggle="toggleLoras">
+        <summary>
+          Loras <span>{{ loraCount }}</span>
+        </summary>
         <div class="row">
-          <div style="min-width: 50%; text-align: center;">name</div>
-          <div style="text-align: center;">model / clip weight</div>
+          <div style="min-width: 50%; text-align: center">name</div>
+          <div style="text-align: center">model / clip weight</div>
         </div>
-        <div v-for="lora, i in loras" :key="lora.lora_name">
+        <div v-for="(lora, i) in loras" :key="lora.lora_name">
           <div class="row">
-            <Dropdown style="min-width: 50%;" :id="'lora' + i" v-model="loras[i].lora_name" v-model:datalist="loraList"></Dropdown>
-            <input class="right" type="text" :id="'lora_m_weight' + i" v-model="loras[i].strength_model">
-            <input v-if="hasClipWeight" class="right" type="text" :id="'lora_c_weight' + i" v-model="loras[i].strength_clip">
+            <Dropdown
+              style="min-width: 50%"
+              :id="'lora' + i"
+              v-model="loras[i].lora_name"
+              v-model:datalist="loraList"
+            ></Dropdown>
+            <input
+              class="right"
+              type="text"
+              :id="'lora_m_weight' + i"
+              v-model="loras[i].strength_model"
+            />
+            <input
+              v-if="hasClipWeight"
+              class="right"
+              type="text"
+              :id="'lora_c_weight' + i"
+              v-model="loras[i].strength_clip"
+            />
             <button @click="removeLora(lora)">✖</button>
           </div>
         </div>
-        <button v-if="loras.length<10" style="width: 100%" @click="addLora()">＋</button>
+        <button v-if="loras.length < 10" style="width: 100%" @click="addLora()">
+          ＋
+        </button>
       </details>
 
       <label for="prompt">Prompt</label>
       <TagAutocomplete id="prompt" v-model="prompt"></TagAutocomplete>
+      <div v-if="showRandomTags" class="row" style="margin: 10px 0">
+        <label style="font-weight: normal; margin-right: 10px"
+          >Random tags ({{ randomTagCount }}):</label
+        >
+        <input
+          type="range"
+          v-model.number="randomTagCount"
+          min="1"
+          max="50"
+          style="width: 200px; margin-right: 10px"
+        />
+        <button @click="addRandomTags(randomTagCount)">Add Random Tags</button>
+      </div>
+
       <!-- <textarea id="prompt" rows="4" v-model="prompt"></textarea> -->
       <label for="negative-prompt">Negative prompt</label>
-      <TagAutocomplete id="negative-prompt" v-model="negative_prompt"></TagAutocomplete>
+      <TagAutocomplete
+        id="negative-prompt"
+        v-model="negative_prompt"
+      ></TagAutocomplete>
       <!-- <textarea id="negative-prompt" rows="3" v-model="negative_prompt"></textarea> -->
       <label for="image-size">Image size</label>
       <div class="row">
-        <Dropdown style="max-width: 45%;" v-model="sizePreset" v-model:datalist="sizePresetList"></Dropdown>
-       <div class="row">
+        <Dropdown
+          style="max-width: 45%"
+          v-model="sizePreset"
+          v-model:datalist="sizePresetList"
+        ></Dropdown>
+        <div class="row">
           <div class="size">
-            <input maxlength="4" v-model="width">
+            <input maxlength="4" v-model="width" />
             <div>✕</div>
-            <input maxlength="4" v-model="height">
+            <input maxlength="4" v-model="height" />
           </div>
         </div>
       </div>
-      <div class="row"><label for="steps">Steps: </label><input style="width:4rem" v-model="steps"></div>
-      <input type="range" id="steps" min="1" :max="maxSteps" step="1" v-model="steps">
-      <div class="row"><label for="cfg_scale">CFG Scale:</label><input style="width:4rem" v-model="cfg_scale"></div>
-      <input type="range" id="cfg_scale" min="0" :max="maxCfg" step="0.1" v-model="cfg_scale">
+      <div class="row">
+        <label for="steps">Steps: </label
+        ><input style="width: 4rem" v-model="steps" />
+      </div>
+      <input
+        type="range"
+        id="steps"
+        min="1"
+        :max="maxSteps"
+        step="1"
+        v-model="steps"
+      />
+      <div class="row">
+        <label for="cfg_scale">CFG Scale:</label
+        ><input style="width: 4rem" v-model="cfg_scale" />
+      </div>
+      <input
+        type="range"
+        id="cfg_scale"
+        min="0"
+        :max="maxCfg"
+        step="0.1"
+        v-model="cfg_scale"
+      />
       <div class="row">
         <div>
           <label for="sampler_name">Sampler</label>
-          <Dropdown id="sampler_name" v-model="sampler_name" v-model:datalist="samplerList"></Dropdown>
+          <Dropdown
+            id="sampler_name"
+            v-model="sampler_name"
+            v-model:datalist="samplerList"
+          ></Dropdown>
         </div>
         <div v-if="schedulerList">
           <label for="scheduler">Scheduler</label>
-          <Dropdown id="scheduler" v-model="scheduler" v-model:datalist="schedulerList"></Dropdown>
+          <Dropdown
+            id="scheduler"
+            v-model="scheduler"
+            v-model:datalist="schedulerList"
+          ></Dropdown>
         </div>
       </div>
       <div class="row">
         <div>
           <label for="seed">Seed</label>
-          <input id="seed" v-model="seed">
+          <input id="seed" v-model="seed" />
         </div>
       </div>
     </div>
-    <button class="generate-button" @click="generate" :disabled="!controller || isGenerating">Generate</button>
+    <button
+      class="generate-button"
+      @click="generate"
+      :disabled="!controller || isGenerating"
+    >
+      Generate
+    </button>
   </div>
 </template>
 
@@ -261,13 +419,13 @@ async function generate() {
   position: relative;
 
   //TODO: make class
-  >div {
+  > div {
     padding: 10px;
     overflow: auto;
     height: calc(100% - 45px); //TODO: no hard-coding for button size!
   }
 
-  &:deep(>*) {
+  &:deep(> *) {
     width: 100%;
   }
 }
@@ -302,7 +460,7 @@ textarea {
   justify-content: space-between;
   align-items: center;
 
-  >div,
+  > div,
   input {
     width: 100%;
   }

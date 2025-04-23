@@ -1,37 +1,34 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import Dropdown from './Dropdown.vue';
 import DataManager from '@/assets/data-manager';
 
-// const taglists = import.meta.glob("/public/taglist/*.csv");
-// const themes = import.meta.glob('/theme/*.css');
+const manager = DataManager.getInstance();
 
-const url = DataManager.getInstance().url;
-const theme = DataManager.getInstance().theme;
-const historyWidth = DataManager.getInstance().historyWidth;
-const fontSize = DataManager.getInstance().fontSize;
-const maxSteps = DataManager.getInstance().maxSteps;
-const maxCfg = DataManager.getInstance().maxCfg;
-
-const keepGenerationInfo = DataManager.getInstance().keepGenerationInfo;
-const useTagautocomplete = DataManager.getInstance().useTagautocomplete;
-const trueOrFalse = [true, false];
-const themeList = DataManager.getInstance().getThemeList();
-const imageFormat = DataManager.getInstance().imageFormat;
+const url = manager.url;
+const theme = manager.theme;
+const historyWidth = manager.historyWidth;
+const fontSize = manager.fontSize;
+const maxSteps = manager.maxSteps;
+const maxCfg = manager.maxCfg;
+const keepGenerationInfo = manager.keepGenerationInfo;
+const useTagautocomplete = manager.useTagautocomplete;
+const themeList = manager.getThemeList();
+const imageFormat = manager.imageFormat;
 const imageFormatList = ["webp", "png"];
-const imageQuality = DataManager.getInstance().imageQuality;
-const sizePresetBase = DataManager.getInstance().sizePresetBase;
+const imageQuality = manager.imageQuality;
+const sizePresetBase = manager.sizePresetBase;
 const sizePresetBaseList = ["All", "SD", "SDXL"];
+const trueOrFalse = [true, false];
+const showRandomTags = manager.showRandomTags;
 
 const resetButtonEl = ref(null);
 const clearHistoryButtonEl = ref(null);
 let resetTimeout = null;
 
 onMounted(() => {
-  // TODO: Add user theme and taglists
-  // console.log(taglists, themes, import.meta.glob("/dist/*.csv"));
-  // fetch(Object.keys(taglists)[0]).then(res => res.text()).then(text => { console.log(text); });
-})
+  // Future: Load themes/taglists dynamically
+});
 
 function reload() {
   location.reload();
@@ -40,15 +37,14 @@ function reload() {
 function resetSettings() {
   resetButtonEl.value.classList.add('pressing');
   resetTimeout = setTimeout(() => {
-    DataManager.getInstance().resetSettings();
-    resetCount = -1;
+    manager.resetSettings();
   }, 2000);
 }
+
 function clearHistory() {
   clearHistoryButtonEl.value.classList.add('pressing');
   resetTimeout = setTimeout(async () => {
-    await DataManager.getInstance().clearHistory();
-    resetCount = -1;
+    await manager.clearHistory();
   }, 2000);
 }
 
@@ -60,8 +56,8 @@ function skipReset() {
   }
   resetTimeout = null;
 }
-
 </script>
+
 <template>
   <div class="settings-wrapper" @contextmenu.preventDefault="">
     <div v-if="!DataManager.getInstance().isExtension()" class="section">
@@ -113,13 +109,19 @@ function skipReset() {
         <label for="max-cfg">Maximum CFG scale</label>
         <input id="max-cfg" type="number" maxlength="4" step="0.1" min="0" max="50" v-model="maxCfg">
       </div>
+      <div class="row">
+        <label for="show-random-tags">Show "Add Random Tags" button</label>
+        <Dropdown id="show-random-tags"
+                  v-model="showRandomTags"
+                  v-model:datalist="trueOrFalse"></Dropdown>
+      </div>
     </div>
 
     <div class="section">
       <h1>UI</h1>
       <div class="row reverse-size">
-        <label for="theme">Theme</label>
         <Dropdown id="theme" v-model="theme" v-model:datalist="themeList"></Dropdown>
+        <label for="theme">Theme</label>
       </div>
       <div class="row">
         <label for="history-width">History width</label><span>{{ historyWidth }}px</span>
@@ -152,106 +154,81 @@ function skipReset() {
 .settings-wrapper {
   display: flex;
   flex-wrap: wrap;
-  align-content: flex-start;
   justify-content: center;
-  gap: 0 10%;
-  border: 2px solid var(--color-background-mute);
-  border-radius: 16px;
   background: var(--color-background-soft);
-  padding: 10px 3%;
+  padding: 20px;
+  border-radius: 12px;
+  gap: 20px;
 
   h1 {
-    padding-top: 12px;
-    font-size: 24px;
-    line-height: 36px;
-    font-weight: bolder;
-  }
-
-  sup,
-  sub {
-    display: inline-block;
-    color: var(--color-text-secondary);
-    font-size: 0.8rem;
-    font-style: italic;
-  }
-
-  label,
-  input {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-height: 40px;
-    height: 40px;
-  }
-
-  input[type="checkbox"] {
-    height: 20px;
-    max-height: 20px;
-  }
-
-  input[type="range"]:disabled::-webkit-slider-thumb {
-    background-color: var(--color-background-soft);
-    outline: 3px solid var(--color-background-soft);
-  }
-
-  button {
-    margin: 1px 0;
-  }
-
-  span {
-    font-size: small;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
   }
 
   .section {
-    display: flex;
-    flex-direction: column;
     width: 100%;
+    max-width: 600px;
+    background: var(--color-background);
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
 
   .row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 8px 0;
 
-    >*:first-child {
-      min-width: 120px;
-      width: 60%;
+    label {
+      flex: 1;
+      font-weight: 500;
     }
 
-    >*:last-child {
-      width: 90px;
-      height: 40px;
+    input, button, .dropdown {
+      flex-shrink: 0;
     }
 
-    >input:last-child {
-      text-align: right;
+    input[type="range"] {
+      flex: 1;
+      margin-left: 12px;
     }
 
     &.reverse-size {
-      >*:last-child {
-        min-width: 120px;
-        width: 60%;
-        height: auto;
-      }
-
-      >*:first-child {
-        min-width: auto;
-        width: 90px;
-        height: 40px;
-      }
+      flex-direction: row-reverse;
     }
   }
 
+  button {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
   button.reset-button {
-    position: relative;
-    background: red;
-    height: 40px;
-    transition: background 2s ease-in-out;
+    background-color: #d9534f;
     color: white;
 
     &.pressing {
-      background: orange;
+      background-color: #f0ad4e;
     }
+  }
+
+  span {
+    margin-left: 10px;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+  }
+
+  sup.note {
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    font-style: italic;
+    margin-left: 6px;
   }
 }
 </style>
