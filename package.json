@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.7.9",
+    "axios": "^1.12.0",
     "textarea-caret": "github:component/textarea-caret-position",
     "vue": "^3.4.37",
     "vue3-lazyload": "^0.3.8"
