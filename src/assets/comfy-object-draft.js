@@ -18,7 +18,7 @@ export function generateComfyObjects(jsonObject) {
         if (!Array.isArray(inputType)) {
           console.error(`inputType ${inputType} for ${nodeName} is not array`);
         }
-        const specialType = ["*", "INT", "FLOAT", "STRING"];
+        const specialType = ["*", "INT", "FLOAT", "STRING", "COMBO"];
         const cand = inputType[0];
         if (Array.isArray(cand)) {
           // console.log(nodeName, inputName, cand);
@@ -83,7 +83,7 @@ export function generateComfyObjects(jsonObject) {
           // !!!!! REFACTORING NEEEEEEEDEDDDDDD !!!!!
           if (!Array.isArray(value) && !Object.keys(node).includes(value.name)) { // it should be specialType
             const type = candidates[i][arg][0];
-            const specialType = ["*", "BOOLEAN", "INT", "FLOAT", "STRING"];
+            const specialType = ["*", "BOOLEAN", "INT", "FLOAT", "STRING", "COMBO"];
 
             if (Array.isArray(type)) {
               if (type.includes(value)) {

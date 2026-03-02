@@ -81,7 +81,7 @@ function skipReset() {
       <h1>Saving image <sup v-if="DataManager.getInstance().backendName.value == 'webui'" class="note">*WebUI's setting will be changed</sup></h1>
       <div class="row">
         <label for="imageFormat">File format for images</label>
-        <Dropdown id="imageFormat" v-model="imageFormat" v-model:datalist="imageFormatList"></Dropdown>
+        <Dropdown id="imageFormat" v-model="imageFormat" :datalist="imageFormatList"></Dropdown>
       </div>
       <div class="row">
         <label for="imageQuality">Webp quality</label><span v-show="imageFormat != 'png'">{{ imageQuality }}%</span>
@@ -91,15 +91,15 @@ function skipReset() {
       <h1>Generator</h1>
       <div class="row">
         <label for="keep-generator-info">Keep generator information</label>
-        <Dropdown id="keep-generator-info" v-model="keepGenerationInfo" v-model:datalist="trueOrFalse"></Dropdown>
+        <Dropdown id="keep-generator-info" v-model="keepGenerationInfo" :datalist="trueOrFalse"></Dropdown>
       </div>
       <div class="row">
         <label for="enable-danbooru-tags">Enable danbooru tag autocomplete</label>
-        <Dropdown id="enable-danbooru-tags" v-model="useTagautocomplete" v-model:datalist="trueOrFalse"></Dropdown>
+        <Dropdown id="enable-danbooru-tags" v-model="useTagautocomplete" :datalist="trueOrFalse"></Dropdown>
       </div>
       <div class="row">
         <label for="size-preset-base">Image size presets for </label>
-        <Dropdown id="size-preset-base" v-model="sizePresetBase" v-model:datalist="sizePresetBaseList"></Dropdown>
+        <Dropdown id="size-preset-base" v-model="sizePresetBase" :datalist="sizePresetBaseList"></Dropdown>
       </div>
       <div class="row">
         <label for="max-steps">Maximum steps</label>
@@ -111,9 +111,7 @@ function skipReset() {
       </div>
       <div class="row">
         <label for="show-random-tags">Show "Add Random Tags" button</label>
-        <Dropdown id="show-random-tags"
-                  v-model="showRandomTags"
-                  v-model:datalist="trueOrFalse"></Dropdown>
+        <Dropdown id="show-random-tags" v-model="showRandomTags" :datalist="trueOrFalse"></Dropdown>
       </div>
     </div>
 
